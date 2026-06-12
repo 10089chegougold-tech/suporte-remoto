@@ -63,7 +63,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="logo"><i class="ti ti-device-laptop"></i> Suporte Remoto</div>
   <div style="display:flex;align-items:center;gap:10px">
@@ -76,7 +75,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 </div>
 
 <div style="display:flex;flex:1;overflow:hidden">
-
   <div id="tela-clientes">
     <h2><i class="ti ti-devices" style="margin-right:6px"></i>Clientes aguardando atendimento</h2>
     <div id="lista-clientes">
@@ -156,19 +154,14 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 
 <script>
 const SERVER = window.location.origin.replace(/^http/, 'ws');
-let ws = null;
-let sessaoAtual = null;
-let clienteAtual = null;
-let streaming = false;
-let dispositivoLargura = 0;
-let dispositivoAltura  = 0;
+let ws = null, deviceAtual = null, streaming = false;
+let dispositivoLargura = 0, dispositivoAltura = 0;
 
 function log(msg, tipo=''){
   const el = document.getElementById('log');
   const d = document.createElement('div');
   d.className = 'log-entry ' + tipo;
-  const t = new Date().toLocaleTimeString('pt-BR');
-  d.innerHTML = `<span class="ts">${t}</span>${msg}`;
+  d.innerHTML = `<span class="ts">${new Date().toLocaleTimeString('pt-BR')}</span>${msg}`;
   el.prepend(d);
 }
 
@@ -180,28 +173,19 @@ function conectarTecnico(){
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     switch(msg.tipo){
-      case 'lista_clientes':
-        renderizarClientes(msg.clientes);
-        break;
+      case 'lista_clientes': renderizarClientes(msg.clientes); break;
       case 'sessao_iniciada':
-        sessaoAtual = msg.sessaoId;
-        clienteAtual = msg.clienteId;
+        deviceAtual = msg.deviceToken;
         atualizarDispositivo(msg.info);
         abrirPainel();
-        log('Sessão iniciada com cliente', 'ev');
+        log('Sessão iniciada', 'ev');
         break;
-      case 'stream_pronto':
-        // Celular aceitou compartilhamento — inicia stream agora
-        iniciarStream();
-        log('Stream iniciado', 'ev');
+      case 'stream_iniciado':
+        iniciarStreamUI();
+        log('Stream ativo', 'ev');
         break;
-      case 'frame_tela':
-        mostrarFrame(msg.frame);
-        break;
-      case 'cliente_desconectou':
-        log('Cliente desconectou', 'err');
-        voltarLista();
-        break;
+      case 'frame_tela': mostrarFrame(msg.frame); break;
+      case 'cliente_desconectou': log('Cliente desconectou', 'err'); break;
     }
   };
   ws.onclose = () => { setStatus(false); setTimeout(conectarTecnico, 3000); };
@@ -217,41 +201,38 @@ function renderizarClientes(clientes){
     <div class="cliente-card">
       <div class="cliente-info">
         <strong>${c.info?.modelo || 'Dispositivo desconhecido'}</strong><br>
-        ${c.info?.android || ''} &nbsp;|&nbsp; Bateria: ${c.info?.bateria || '—'} &nbsp;|&nbsp; ${c.info?.wifi || '—'}
+        ${c.info?.android||''} &nbsp;|&nbsp; Bateria: ${c.info?.bateria||'—'} &nbsp;|&nbsp; ${c.info?.wifi||'—'}
+        ${c.emAtendimento ? ' &nbsp;<span style="color:#68d391">● Em atendimento</span>' : ''}
       </div>
-      <button class="btn-atender" onclick="atenderCliente('${c.clienteId}')">
+      <button class="btn-atender" onclick="atenderCliente('${c.deviceToken}')">
         <i class="ti ti-headset"></i> Atender
       </button>
     </div>
   `).join('');
 }
 
-function atenderCliente(clienteId){
-  ws.send(JSON.stringify({ tipo: 'conectar_cliente', clienteId }));
+function atenderCliente(deviceToken){
+  ws.send(JSON.stringify({ tipo: 'conectar_cliente', deviceToken }));
 }
 
 function abrirPainel(){
   document.getElementById('tela-clientes').style.display = 'none';
   document.getElementById('tela-painel').style.display = 'flex';
   document.getElementById('btn-voltar').style.display = 'block';
-  document.getElementById('session-id-top').textContent = `Sessão: ${sessaoAtual}`;
+  document.getElementById('session-id-top').textContent = `Token: ${deviceAtual}`;
 }
 
-function iniciarStream(){
+function iniciarStreamUI(){
   streaming = true;
-  send({ tipo: 'stream_start' });
   document.getElementById('stream-icon').className = 'ti ti-player-pause';
   document.getElementById('stream-label').textContent = 'Parar';
 }
 
 function voltarLista(){
-  sessaoAtual = null;
-  clienteAtual = null;
-  streaming = false;
+  deviceAtual = null; streaming = false;
   document.getElementById('tela-painel').style.display = 'none';
   document.getElementById('tela-clientes').style.display = 'flex';
   document.getElementById('btn-voltar').style.display = 'none';
-  document.getElementById('session-id-top').textContent = '';
   document.getElementById('stream-img').style.display = 'none';
   document.getElementById('placeholder').style.display = 'flex';
   document.getElementById('stream-icon').className = 'ti ti-player-play';
@@ -260,17 +241,14 @@ function voltarLista(){
 
 function send(msg){
   if(!ws || ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ ...msg, sessaoId: sessaoAtual }));
+  ws.send(JSON.stringify(msg));
 }
 
-function sendCmd(cmd){
-  send({ tipo: 'cmd', cmd });
-  log(`→ cmd ${cmd}`);
-}
+function sendCmd(cmd){ send({ tipo:'cmd', cmd }); log(`→ cmd ${cmd}`); }
 
 function handleToque(e){
   const rect = e.currentTarget.getBoundingClientRect();
-  const xPct = ((e.clientX - rect.left) / rect.width  * 100).toFixed(2);
+  const xPct = ((e.clientX - rect.left) / rect.width * 100).toFixed(2);
   const yPct = ((e.clientY - rect.top)  / rect.height * 100).toFixed(2);
   send({ tipo:'toque', x:+xPct, y:+yPct, largura: dispositivoLargura||1080, altura: dispositivoAltura||2340 });
 }
@@ -296,32 +274,27 @@ function enviarTexto(){
 
 function atualizarDispositivo(info){
   if(!info) return;
-  document.getElementById('d-bat').textContent   = info.bateria  || '—';
-  document.getElementById('d-ram').textContent   = info.ram      || '—';
-  document.getElementById('d-wifi').textContent  = info.wifi     || '—';
-  document.getElementById('d-os').textContent    = info.android  || '—';
-  document.getElementById('d-model').textContent = info.modelo   || '—';
+  document.getElementById('d-bat').textContent = info.bateria||'—';
+  document.getElementById('d-ram').textContent = info.ram||'—';
+  document.getElementById('d-wifi').textContent = info.wifi||'—';
+  document.getElementById('d-os').textContent = info.android||'—';
+  document.getElementById('d-model').textContent = info.modelo||'—';
   if(info.largura && info.altura){
     dispositivoLargura = parseInt(info.largura);
     dispositivoAltura  = parseInt(info.altura);
     document.getElementById('d-res').textContent = `${dispositivoLargura}×${dispositivoAltura}`;
     const ratio = dispositivoAltura / dispositivoLargura;
-    const wrap  = document.getElementById('device-wrap');
-    wrap.style.width  = '210px';
+    const wrap = document.getElementById('device-wrap');
+    wrap.style.width = '210px';
     wrap.style.height = Math.round(210 * ratio) + 'px';
   }
 }
 
-function encerrar(){
-  send({ tipo: 'encerrar' });
-  voltarLista();
-  log('Sessão encerrada', 'err');
-}
-
+function encerrar(){ send({tipo:'encerrar'}); voltarLista(); log('Sessão encerrada','err'); }
 function setStatus(online){
   const b = document.getElementById('status-badge');
-  b.className = 'status ' + (online ? 'online' : 'offline');
-  b.innerHTML = `<span class="dot"></span> ${online ? 'Conectado' : 'Desconectado'}`;
+  b.className = 'status ' + (online?'online':'offline');
+  b.innerHTML = `<span class="dot"></span> ${online?'Conectado':'Desconectado'}`;
 }
 </script>
 </body>
