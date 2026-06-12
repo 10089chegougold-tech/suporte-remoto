@@ -10,7 +10,7 @@ const wss = new WebSocket.Server({ server });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static('../painel'));
 
 // Clientes conectados aguardando atendimento
 // { clienteId: { ws, info, sessaoId } }
