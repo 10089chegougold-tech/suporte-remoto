@@ -12,24 +12,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// Clientes: { deviceToken: { ws, info, tecnicoId } }
 const clientes = new Map();
+// Técnicos: { tecnicoId: { ws, deviceToken } }
 const tecnicos = new Map();
-const sessoes = new Map();
-
-// Guarda última sessão por deviceId para reconexão
-const sessoesPorDispositivo = new Map();
 
 function broadcastTecnicos(msg) {
   const data = JSON.stringify(msg);
-  tecnicos.forEach((ws) => {
-    if (ws.readyState === WebSocket.OPEN) ws.send(data);
+  tecnicos.forEach((t) => {
+    if (t.ws.readyState === WebSocket.OPEN) t.ws.send(data);
   });
 }
 
 function listaClientes() {
   const lista = [];
-  clientes.forEach((c, id) => {
-    lista.push({ clienteId: id, info: c.info, sessaoId: c.sessaoId });
+  clientes.forEach((c, token) => {
+    lista.push({ deviceToken: token, info: c.info, emAtendimento: !!c.tecnicoId });
   });
   return lista;
 }
@@ -37,51 +35,40 @@ function listaClientes() {
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
   const papel = url.searchParams.get('papel');
-  const id = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const deviceToken = url.searchParams.get('token'); // token fixo do dispositivo
 
   if (papel === 'tecnico') {
-    tecnicos.set(id, ws);
-    console.log(`[TÉCNICO] Conectou: ${id}`);
+    const tecnicoId = crypto.randomBytes(4).toString('hex').toUpperCase();
+    tecnicos.set(tecnicoId, { ws, deviceToken: null });
+    console.log(`[TÉCNICO] Conectou: ${tecnicoId}`);
     ws.send(JSON.stringify({ tipo: 'lista_clientes', clientes: listaClientes() }));
 
     ws.on('message', (raw) => {
-      let msg;
-      try { msg = JSON.parse(raw); } catch { return; }
+      let msg; try { msg = JSON.parse(raw); } catch { return; }
 
       switch (msg.tipo) {
         case 'conectar_cliente': {
-          const cliente = clientes.get(msg.clienteId);
-          if (!cliente || !cliente.ws || cliente.ws.readyState !== WebSocket.OPEN) {
+          const cliente = clientes.get(msg.deviceToken);
+          if (!cliente || cliente.ws.readyState !== WebSocket.OPEN) {
             ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente não disponível' }));
             return;
           }
-          const sessaoId = crypto.randomBytes(4).toString('hex').toUpperCase();
-          sessoes.set(sessaoId, { tecnicoId: id, clienteId: msg.clienteId });
-          cliente.sessaoId = sessaoId;
+          // Associa técnico ao cliente
+          cliente.tecnicoId = tecnicoId;
+          tecnicos.get(tecnicoId).deviceToken = msg.deviceToken;
 
-          // Salva sessão por modelo do dispositivo para reconexão
-          const modelo = cliente.info?.modelo || '';
-          if (modelo) sessoesPorDispositivo.set(modelo, { sessaoId, tecnicoId: id });
-
-          cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou', sessaoId }));
-          ws.send(JSON.stringify({
-            tipo: 'sessao_iniciada',
-            sessaoId,
-            clienteId: msg.clienteId,
-            info: cliente.info
-          }));
-          console.log(`[SESSÃO] Iniciada: ${sessaoId}`);
+          cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
+          ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: cliente.info }));
+          console.log(`[SESSÃO] Técnico ${tecnicoId} atendendo ${msg.deviceToken}`);
+          broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
           break;
         }
-
         default: {
-          let sessaoEncontrada = null;
-          sessoes.forEach((s) => {
-            if (s.tecnicoId === id) sessaoEncontrada = s;
-          });
-          if (!sessaoEncontrada) return;
-          const cliente = clientes.get(sessaoEncontrada.clienteId);
-          if (cliente?.ws?.readyState === WebSocket.OPEN) {
+          // Repassa comando para o cliente do técnico
+          const t = tecnicos.get(tecnicoId);
+          if (!t?.deviceToken) return;
+          const cliente = clientes.get(t.deviceToken);
+          if (cliente?.ws.readyState === WebSocket.OPEN) {
             cliente.ws.send(JSON.stringify(msg));
           }
           break;
@@ -90,112 +77,75 @@ wss.on('connection', (ws, req) => {
     });
 
     ws.on('close', () => {
-      tecnicos.delete(id);
-      console.log(`[TÉCNICO] Desconectou: ${id}`);
+      const t = tecnicos.get(tecnicoId);
+      if (t?.deviceToken) {
+        const cliente = clientes.get(t.deviceToken);
+        if (cliente) {
+          cliente.tecnicoId = null;
+          cliente.ws.send(JSON.stringify({ tipo: 'tecnico_desconectou' }));
+        }
+      }
+      tecnicos.delete(tecnicoId);
+      console.log(`[TÉCNICO] Desconectou: ${tecnicoId}`);
     });
 
-  } else if (papel === 'cliente') {
-    clientes.set(id, { ws, info: {}, sessaoId: null });
-    console.log(`[CLIENTE] Conectou: ${id}`);
+  } else if (papel === 'cliente' && deviceToken) {
+    // Reconecta cliente existente ou cria novo
+    const existing = clientes.get(deviceToken);
+    if (existing) {
+      existing.ws = ws; // atualiza WebSocket mantendo tecnicoId
+      console.log(`[CLIENTE] Reconectou: ${deviceToken}`);
+    } else {
+      clientes.set(deviceToken, { ws, info: {}, tecnicoId: null });
+      console.log(`[CLIENTE] Novo: ${deviceToken}`);
+    }
+
     broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
 
     ws.on('message', (raw) => {
-      let msg;
-      try { msg = JSON.parse(raw); } catch { return; }
+      let msg; try { msg = JSON.parse(raw); } catch { return; }
+
+      const cliente = clientes.get(deviceToken);
 
       switch (msg.tipo) {
         case 'info_dispositivo': {
-          const c = clientes.get(id);
-          if (c) {
-            c.info = msg.dados;
-            console.log(`[INFO] Cliente ${id}: ${JSON.stringify(msg.dados)}`);
-
-            // Tenta reconectar à sessão anterior pelo modelo do dispositivo
-            const modelo = msg.dados?.modelo || '';
-            const sessaoAnterior = sessoesPorDispositivo.get(modelo);
-            if (sessaoAnterior) {
-              const sessao = sessoes.get(sessaoAnterior.sessaoId);
-              const tecnicoWs = tecnicos.get(sessaoAnterior.tecnicoId);
-              if (sessao && tecnicoWs?.readyState === WebSocket.OPEN) {
-                // Atualiza clienteId na sessão
-                sessao.clienteId = id;
-                c.sessaoId = sessaoAnterior.sessaoId;
-                console.log(`[RECONEXÃO] Cliente ${id} reconectado à sessão ${sessaoAnterior.sessaoId}`);
-                // Avisa técnico que cliente reconectou
-                tecnicoWs.send(JSON.stringify({
-                  tipo: 'sessao_iniciada',
-                  sessaoId: sessaoAnterior.sessaoId,
-                  clienteId: id,
-                  info: msg.dados
-                }));
-                // Avisa cliente para iniciar stream novamente
-                ws.send(JSON.stringify({ tipo: 'tecnico_conectou', sessaoId: sessaoAnterior.sessaoId }));
-              } else {
-                sessoesPorDispositivo.delete(modelo);
-              }
-            }
-
+          if (cliente) {
+            cliente.info = msg.dados;
             broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
           }
           break;
         }
-
         case 'frame_tela': {
-          const c = clientes.get(id);
-          if (!c?.sessaoId) {
-            console.log(`[FRAME] Cliente ${id} sem sessão — descartando frame`);
-            return;
-          }
-          const sessao = sessoes.get(c.sessaoId);
-          if (!sessao) return;
-          const tecnicoWs = tecnicos.get(sessao.tecnicoId);
-          if (tecnicoWs?.readyState === WebSocket.OPEN) {
-            tecnicoWs.send(raw);
+          if (!cliente?.tecnicoId) return;
+          const t = tecnicos.get(cliente.tecnicoId);
+          if (t?.ws.readyState === WebSocket.OPEN) t.ws.send(raw);
+          break;
+        }
+        case 'stream_pronto': {
+          // Avisa técnico que stream está pronto
+          if (!cliente?.tecnicoId) return;
+          const t = tecnicos.get(cliente.tecnicoId);
+          if (t?.ws.readyState === WebSocket.OPEN) {
+            t.ws.send(JSON.stringify({ tipo: 'stream_iniciado' }));
           }
           break;
         }
-
         default: {
-          const c = clientes.get(id);
-          if (!c?.sessaoId) return;
-          const sessao = sessoes.get(c.sessaoId);
-          if (!sessao) return;
-          const tecnicoWs = tecnicos.get(sessao.tecnicoId);
-          if (tecnicoWs?.readyState === WebSocket.OPEN) {
-            tecnicoWs.send(JSON.stringify(msg));
-          }
+          if (!cliente?.tecnicoId) return;
+          const t = tecnicos.get(cliente.tecnicoId);
+          if (t?.ws.readyState === WebSocket.OPEN) t.ws.send(JSON.stringify(msg));
           break;
         }
       }
     });
 
     ws.on('close', () => {
-      const c = clientes.get(id);
-      if (c?.sessaoId) {
-        const sessao = sessoes.get(c.sessaoId);
-        if (sessao) {
-          const tecnicoWs = tecnicos.get(sessao.tecnicoId);
-          if (tecnicoWs?.readyState === WebSocket.OPEN) {
-            tecnicoWs.send(JSON.stringify({ tipo: 'cliente_desconectou', clienteId: id, sessaoId: c.sessaoId }));
-          }
-          // Não deleta sessão imediatamente — aguarda reconexão
-          setTimeout(() => {
-            const clienteAtual = clientes.get(sessao.clienteId);
-            if (!clienteAtual) {
-              sessoes.delete(c.sessaoId);
-              console.log(`[SESSÃO] Removida: ${c.sessaoId}`);
-            }
-          }, 10000); // aguarda 10s para reconexão
-        }
-      }
-      clientes.delete(id);
+      console.log(`[CLIENTE] Desconectou: ${deviceToken}`);
+      // Não remove — mantém para reconexão
       broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
-      console.log(`[CLIENTE] Desconectou: ${id}`);
     });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`\n✅ Servidor rodando em http://localhost:${PORT}`);
-});
+server.listen(PORT, () => console.log(`✅ Servidor rodando em http://localhost:${PORT}`));
