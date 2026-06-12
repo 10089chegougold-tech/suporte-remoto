@@ -14,7 +14,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .status{display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 12px;border-radius:999px;background:#1a202c}
 .status.online{color:#68d391}.status.offline{color:#718096}
 .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-.main{display:grid;grid-template-columns:200px 1fr 220px;flex:1;overflow:hidden}
 .sidebar{background:#161b27;border-right:1px solid #2d3748;padding:12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
 .sec-title{font-size:10px;color:#4a5568;letter-spacing:.08em;text-transform:uppercase;padding:8px 6px 4px}
 .ctrl{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;border:none;background:transparent;color:#a0aec0;cursor:pointer;font-size:12px;width:100%;text-align:left}
@@ -50,8 +49,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .log-entry.ev{color:#68d391}.log-entry.err{color:#fc8181}
 .vol-row{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;color:#718096}
 .vol-row input[type=range]{flex:1;accent-color:#4299e1}
-
-/* Lista de clientes */
 #tela-clientes{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:20px}
 #tela-clientes h2{font-size:14px;color:#a0aec0}
 .cliente-card{background:#1e2433;border:1px solid #2d3748;border-radius:12px;padding:12px 16px;width:320px;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -80,7 +77,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 
 <div style="display:flex;flex:1;overflow:hidden">
 
-  <!-- Tela de lista de clientes -->
   <div id="tela-clientes">
     <h2><i class="ti ti-devices" style="margin-right:6px"></i>Clientes aguardando atendimento</h2>
     <div id="lista-clientes">
@@ -88,11 +84,8 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
     </div>
   </div>
 
-  <!-- Tela do painel de controle -->
   <div id="tela-painel">
     <div class="tela-painel-inner">
-
-      <!-- Sidebar -->
       <div class="sidebar">
         <p class="sec-title">Sistema</p>
         <button class="ctrl" onclick="sendCmd('home')"><i class="ti ti-home"></i> Home</button>
@@ -114,7 +107,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <button class="ctrl danger" onclick="encerrar()"><i class="ti ti-plug-x"></i> Encerrar sessão</button>
       </div>
 
-      <!-- Centro -->
       <div class="center">
         <div class="device" id="device-wrap">
           <div class="screen" id="screen" onclick="handleToque(event)">
@@ -147,7 +139,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         </div>
       </div>
 
-      <!-- Direita -->
       <div class="right">
         <p class="sec-title">Status do dispositivo</p>
         <div class="stat-row"><span class="stat-label">Bateria</span><span class="stat-val" id="d-bat">—</span></div>
@@ -159,7 +150,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <p class="sec-title" style="margin-top:12px">Log da sessão</p>
         <div class="log" id="log"></div>
       </div>
-
     </div>
   </div>
 </div>
@@ -182,15 +172,11 @@ function log(msg, tipo=''){
   el.prepend(d);
 }
 
-// Conecta como técnico automaticamente ao abrir
 conectarTecnico();
 
 function conectarTecnico(){
   ws = new WebSocket(`${SERVER}?papel=tecnico`);
-  ws.onopen = () => {
-    setStatus(true);
-    log('Painel conectado', 'ev');
-  };
+  ws.onopen = () => { setStatus(true); log('Painel conectado', 'ev'); };
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     switch(msg.tipo){
@@ -204,6 +190,11 @@ function conectarTecnico(){
         abrirPainel();
         log('Sessão iniciada com cliente', 'ev');
         break;
+      case 'stream_pronto':
+        // Celular aceitou compartilhamento — inicia stream agora
+        iniciarStream();
+        log('Stream iniciado', 'ev');
+        break;
       case 'frame_tela':
         mostrarFrame(msg.frame);
         break;
@@ -213,10 +204,7 @@ function conectarTecnico(){
         break;
     }
   };
-  ws.onclose = () => {
-    setStatus(false);
-    setTimeout(conectarTecnico, 3000); // reconecta automaticamente
-  };
+  ws.onclose = () => { setStatus(false); setTimeout(conectarTecnico, 3000); };
 }
 
 function renderizarClientes(clientes){
@@ -247,16 +235,13 @@ function abrirPainel(){
   document.getElementById('tela-painel').style.display = 'flex';
   document.getElementById('btn-voltar').style.display = 'block';
   document.getElementById('session-id-top').textContent = `Sessão: ${sessaoAtual}`;
-  // Inicia stream automaticamente
+}
+
+function iniciarStream(){
   streaming = true;
   send({ tipo: 'stream_start' });
   document.getElementById('stream-icon').className = 'ti ti-player-pause';
   document.getElementById('stream-label').textContent = 'Parar';
-}{
-  document.getElementById('tela-clientes').style.display = 'none';
-  document.getElementById('tela-painel').style.display = 'flex';
-  document.getElementById('btn-voltar').style.display = 'block';
-  document.getElementById('session-id-top').textContent = `Sessão: ${sessaoAtual}`;
 }
 
 function voltarLista(){
