@@ -127,7 +127,7 @@ wss.on('connection', (ws, req) => {
         case 'frame_tela': {
           if (!cliente?.tecnicoId) return;
           const t = tecnicos.get(cliente.tecnicoId);
-          if (t?.ws.readyState === WebSocket.OPEN) t.ws.send(raw);
+          if (t?.ws.readyState === WebSocket.OPEN) t.ws.send(raw.toString());
           break;
         }
         case 'stream_pronto': {
