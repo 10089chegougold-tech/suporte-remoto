@@ -35,7 +35,7 @@ function listaClientes() {
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
   const papel = url.searchParams.get('papel');
-  const deviceToken = url.searchParams.get('token'); // token fixo do dispositivo
+  const deviceToken = url.searchParams.get('token');
 
   if (papel === 'tecnico') {
     const tecnicoId = crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -53,7 +53,6 @@ wss.on('connection', (ws, req) => {
             ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente não disponível' }));
             return;
           }
-          // Associa técnico ao cliente
           cliente.tecnicoId = tecnicoId;
           tecnicos.get(tecnicoId).deviceToken = msg.deviceToken;
 
@@ -64,7 +63,6 @@ wss.on('connection', (ws, req) => {
           break;
         }
         default: {
-          // Repassa comando para o cliente do técnico
           const t = tecnicos.get(tecnicoId);
           if (!t?.deviceToken) return;
           const cliente = clientes.get(t.deviceToken);
@@ -82,7 +80,9 @@ wss.on('connection', (ws, req) => {
         const cliente = clientes.get(t.deviceToken);
         if (cliente) {
           cliente.tecnicoId = null;
-          cliente.ws.send(JSON.stringify({ tipo: 'tecnico_desconectou' }));
+          if (cliente.ws.readyState === WebSocket.OPEN) {
+            cliente.ws.send(JSON.stringify({ tipo: 'tecnico_desconectou' }));
+          }
         }
       }
       tecnicos.delete(tecnicoId);
@@ -90,11 +90,20 @@ wss.on('connection', (ws, req) => {
     });
 
   } else if (papel === 'cliente' && deviceToken) {
-    // Reconecta cliente existente ou cria novo
     const existing = clientes.get(deviceToken);
     if (existing) {
-      existing.ws = ws; // atualiza WebSocket mantendo tecnicoId
+      existing.ws = ws;
       console.log(`[CLIENTE] Reconectou: ${deviceToken}`);
+      // Se tinha técnico ativo, manda tecnico_conectou para reiniciar stream
+      if (existing.tecnicoId) {
+        const t = tecnicos.get(existing.tecnicoId);
+        if (t?.ws.readyState === WebSocket.OPEN) {
+          console.log(`[STREAM] Notificando cliente ${deviceToken} para reiniciar stream`);
+          ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
+        } else {
+          existing.tecnicoId = null;
+        }
+      }
     } else {
       clientes.set(deviceToken, { ws, info: {}, tecnicoId: null });
       console.log(`[CLIENTE] Novo: ${deviceToken}`);
@@ -122,7 +131,6 @@ wss.on('connection', (ws, req) => {
           break;
         }
         case 'stream_pronto': {
-          // Avisa técnico que stream está pronto
           if (!cliente?.tecnicoId) return;
           const t = tecnicos.get(cliente.tecnicoId);
           if (t?.ws.readyState === WebSocket.OPEN) {
@@ -141,7 +149,6 @@ wss.on('connection', (ws, req) => {
 
     ws.on('close', () => {
       console.log(`[CLIENTE] Desconectou: ${deviceToken}`);
-      // Não remove — mantém para reconexão
       broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
     });
   }
