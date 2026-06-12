@@ -23,7 +23,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl.danger:hover{background:#2d1515;color:#fc8181}
 .ctrl.danger:hover i{color:#fc8181}
 .center{display:flex;flex-direction:column;align-items:center;padding:20px;gap:12px;overflow:auto}
-.device{width:210px;height:400px;background:#1a202c;border:2px solid #2d3748;border-radius:28px;position:relative;overflow:hidden;flex-shrink:0}
+.device{background:#1a202c;border:2px solid #2d3748;border-radius:28px;position:relative;overflow:hidden;flex-shrink:0}
 .screen{width:100%;height:100%;background:#0d1117;display:flex;align-items:center;justify-content:center;cursor:crosshair;position:relative}
 #stream-img{width:100%;height:100%;object-fit:contain;display:none}
 .screen-placeholder{text-align:center;color:#2d3748}
@@ -100,7 +100,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 
   <!-- Centro -->
   <div class="center">
-    <div class="device">
+    <div class="device" id="device-wrap">
       <div class="screen" id="screen" onclick="handleToque(event)">
         <img id="stream-img" alt="Tela do dispositivo">
         <div class="screen-placeholder" id="placeholder">
@@ -143,6 +143,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
     <div class="stat-row"><span class="stat-label">Wi-Fi</span><span class="stat-val" id="d-wifi">—</span></div>
     <div class="stat-row"><span class="stat-label">Android</span><span class="stat-val" id="d-os">—</span></div>
     <div class="stat-row"><span class="stat-label">Modelo</span><span class="stat-val" id="d-model">—</span></div>
+    <div class="stat-row"><span class="stat-label">Resolução</span><span class="stat-val" id="d-res">—</span></div>
 
     <button class="gen-btn" onclick="gerarSessao()"><i class="ti ti-link"></i> Gerar nova sessão</button>
     <div class="session-box">
@@ -162,6 +163,10 @@ let ws = null;
 let sessionId = null;
 let streaming = false;
 let linkAtual = '';
+
+// Resolução real do dispositivo — atualizada quando info_dispositivo chega
+let dispositivoLargura = 0;
+let dispositivoAltura  = 0;
 
 function log(msg, tipo=''){
   const el = document.getElementById('log');
@@ -191,9 +196,7 @@ function conectarWS(){
   if(ws) ws.close();
   ws = new WebSocket(`${SERVER}?s=${sessionId}&papel=tecnico`);
 
-  ws.onopen = () => {
-    log('Painel conectado ao servidor', 'ev');
-  };
+  ws.onopen = () => log('Painel conectado ao servidor', 'ev');
 
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
@@ -238,9 +241,18 @@ function send(msg){
 
 function handleToque(e){
   const rect = e.currentTarget.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
-  const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
-  send({tipo:'toque', x:+x, y:+y});
+  const xPct = ((e.clientX - rect.left) / rect.width  * 100).toFixed(2);
+  const yPct = ((e.clientY - rect.top)  / rect.height * 100).toFixed(2);
+
+  // Envia as coordenadas em % + resolução real do dispositivo
+  // O app usa (xPct/100 * largura) para obter o pixel exato
+  send({
+    tipo: 'toque',
+    x: +xPct,
+    y: +yPct,
+    largura: dispositivoLargura || 1080,
+    altura:  dispositivoAltura  || 2340
+  });
 }
 
 function toggleStream(){
@@ -264,11 +276,25 @@ function enviarTexto(){
 
 function atualizarDispositivo(info){
   if(!info) return;
-  document.getElementById('d-bat').textContent = info.bateria || '—';
-  document.getElementById('d-ram').textContent = info.ram || '—';
-  document.getElementById('d-wifi').textContent = info.wifi || '—';
-  document.getElementById('d-os').textContent = info.android || '—';
-  document.getElementById('d-model').textContent = info.modelo || '—';
+  document.getElementById('d-bat').textContent   = info.bateria  || '—';
+  document.getElementById('d-ram').textContent   = info.ram      || '—';
+  document.getElementById('d-wifi').textContent  = info.wifi     || '—';
+  document.getElementById('d-os').textContent    = info.android  || '—';
+  document.getElementById('d-model').textContent = info.modelo   || '—';
+
+  // Salva resolução real e mostra no painel
+  if(info.largura && info.altura){
+    dispositivoLargura = parseInt(info.largura);
+    dispositivoAltura  = parseInt(info.altura);
+    document.getElementById('d-res').textContent = `${dispositivoLargura}×${dispositivoAltura}`;
+
+    // Ajusta proporção do device na tela
+    const ratio = dispositivoAltura / dispositivoLargura;
+    const wrap  = document.getElementById('device-wrap');
+    const w     = 210;
+    wrap.style.width  = w + 'px';
+    wrap.style.height = Math.round(w * ratio) + 'px';
+  }
 }
 
 function setOnline(){
