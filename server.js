@@ -10,81 +10,163 @@ const wss = new WebSocket.Server({ server });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('./'));
+app.use(express.static('../painel'));
 
-const sessions = new Map();
+// Clientes conectados aguardando atendimento
+// { clienteId: { ws, info, sessaoId } }
+const clientes = new Map();
 
-app.post('/api/sessao/criar', (req, res) => {
-  const sessionId = crypto.randomBytes(4).toString('hex').toUpperCase();
-  sessions.set(sessionId, { tecnico: null, cliente: null, criada: new Date().toISOString(), aceita: false, info: {} });
-  res.json({ sessionId, link: `${req.protocol}://${req.get('host')}/cliente.html?s=${sessionId}`, expires: '30min' });
-});
+// Técnicos conectados
+// { tecnicoId: ws }
+const tecnicos = new Map();
 
-app.get('/api/sessao/:id', (req, res) => {
-  const s = sessions.get(req.params.id);
-  if (!s) return res.status(404).json({ erro: 'Sessão não encontrada' });
-  res.json({ sessionId: req.params.id, tecnicoConectado: !!s.tecnico, clienteConectado: !!s.cliente, aceita: s.aceita, criada: s.criada, dispositivo: s.info });
-});
+// Sessões ativas (técnico atendendo cliente)
+// { sessaoId: { tecnicoId, clienteId } }
+const sessoes = new Map();
+
+function broadcastTecnicos(msg) {
+  const data = JSON.stringify(msg);
+  tecnicos.forEach((ws) => {
+    if (ws.readyState === WebSocket.OPEN) ws.send(data);
+  });
+}
+
+function listaClientes() {
+  const lista = [];
+  clientes.forEach((c, id) => {
+    lista.push({ clienteId: id, info: c.info, sessaoId: c.sessaoId });
+  });
+  return lista;
+}
 
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
-  const sessionId = url.searchParams.get('s');
   const papel = url.searchParams.get('papel');
+  const id = crypto.randomBytes(4).toString('hex').toUpperCase();
 
-  if (!sessionId || !papel) { ws.close(1008, 'Parâmetros inválidos'); return; }
-  if (!sessions.has(sessionId)) { ws.close(1008, 'Sessão não encontrada'); return; }
+  if (papel === 'tecnico') {
+    tecnicos.set(id, ws);
+    console.log(`[TÉCNICO] Conectou: ${id}`);
 
-  const sessao = sessions.get(sessionId);
-  sessao[papel] = ws;
+    // Envia lista atual de clientes
+    ws.send(JSON.stringify({ tipo: 'lista_clientes', clientes: listaClientes() }));
 
-  const outro = papel === 'tecnico' ? sessao.cliente : sessao.tecnico;
-  if (outro && outro.readyState === WebSocket.OPEN) {
-    outro.send(JSON.stringify({ tipo: 'par_conectado', papel }));
+    ws.on('message', (raw) => {
+      let msg;
+      try { msg = JSON.parse(raw); } catch { return; }
+
+      switch (msg.tipo) {
+        case 'conectar_cliente': {
+          // Técnico escolheu um cliente para atender
+          const cliente = clientes.get(msg.clienteId);
+          if (!cliente || !cliente.ws || cliente.ws.readyState !== WebSocket.OPEN) {
+            ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente não disponível' }));
+            return;
+          }
+          const sessaoId = crypto.randomBytes(4).toString('hex').toUpperCase();
+          sessoes.set(sessaoId, { tecnicoId: id, clienteId: msg.clienteId });
+          cliente.sessaoId = sessaoId;
+
+          // Avisa cliente que técnico conectou
+          cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou', sessaoId }));
+
+          // Avisa técnico com info do cliente
+          ws.send(JSON.stringify({
+            tipo: 'sessao_iniciada',
+            sessaoId,
+            clienteId: msg.clienteId,
+            info: cliente.info
+          }));
+          console.log(`[SESSÃO] Iniciada: ${sessaoId}`);
+          break;
+        }
+
+        default: {
+          // Repassa comando para o cliente da sessão
+          const sessao = sessoes.get(msg.sessaoId);
+          if (!sessao) return;
+          const cliente = clientes.get(sessao.clienteId);
+          if (cliente?.ws?.readyState === WebSocket.OPEN) {
+            cliente.ws.send(JSON.stringify(msg));
+          }
+          break;
+        }
+      }
+    });
+
+    ws.on('close', () => {
+      tecnicos.delete(id);
+      console.log(`[TÉCNICO] Desconectou: ${id}`);
+    });
+
+  } else if (papel === 'cliente') {
+    clientes.set(id, { ws, info: {}, sessaoId: null });
+    console.log(`[CLIENTE] Conectou: ${id}`);
+
+    // Avisa técnicos que novo cliente chegou
+    broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
+
+    ws.on('message', (raw) => {
+      let msg;
+      try { msg = JSON.parse(raw); } catch { return; }
+
+      switch (msg.tipo) {
+        case 'info_dispositivo': {
+          const c = clientes.get(id);
+          if (c) {
+            c.info = msg.dados;
+            // Atualiza lista nos técnicos
+            broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
+          }
+          break;
+        }
+        case 'frame_tela': {
+          // Repassa frame para o técnico da sessão
+          const c = clientes.get(id);
+          if (!c?.sessaoId) return;
+          const sessao = sessoes.get(c.sessaoId);
+          if (!sessao) return;
+          const tecnicoWs = tecnicos.get(sessao.tecnicoId);
+          if (tecnicoWs?.readyState === WebSocket.OPEN) {
+            tecnicoWs.send(raw);
+          }
+          break;
+        }
+        default: {
+          // Repassa para o técnico da sessão
+          const c = clientes.get(id);
+          if (!c?.sessaoId) return;
+          const sessao = sessoes.get(c.sessaoId);
+          if (!sessao) return;
+          const tecnicoWs = tecnicos.get(sessao.tecnicoId);
+          if (tecnicoWs?.readyState === WebSocket.OPEN) {
+            tecnicoWs.send(JSON.stringify(msg));
+          }
+          break;
+        }
+      }
+    });
+
+    ws.on('close', () => {
+      const c = clientes.get(id);
+      if (c?.sessaoId) {
+        const sessao = sessoes.get(c.sessaoId);
+        if (sessao) {
+          const tecnicoWs = tecnicos.get(sessao.tecnicoId);
+          if (tecnicoWs?.readyState === WebSocket.OPEN) {
+            tecnicoWs.send(JSON.stringify({ tipo: 'cliente_desconectou', clienteId: id, sessaoId: c.sessaoId }));
+          }
+          sessoes.delete(c.sessaoId);
+        }
+      }
+      clientes.delete(id);
+      broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
+      console.log(`[CLIENTE] Desconectou: ${id}`);
+    });
   }
-
-  ws.on('message', (raw) => {
-    let msg;
-    try { msg = JSON.parse(raw); } catch { return; }
-
-    const destino = papel === 'tecnico' ? sessao.cliente : sessao.tecnico;
-
-    switch (msg.tipo) {
-      case 'info_dispositivo':
-        sessao.info = msg.dados;
-        break;
-
-      case 'consentimento':
-        sessao.aceita = msg.aceito;
-        if (sessao.tecnico && sessao.tecnico.readyState === WebSocket.OPEN) {
-          sessao.tecnico.send(JSON.stringify({ tipo: 'consentimento', aceito: msg.aceito, dispositivo: sessao.info }));
-        }
-        return;
-
-      case 'frame_tela':
-        if (sessao.tecnico && sessao.tecnico.readyState === WebSocket.OPEN) {
-          sessao.tecnico.send(JSON.stringify(msg));
-        }
-        return;
-    }
-
-    if (destino && destino.readyState === WebSocket.OPEN) {
-      destino.send(JSON.stringify(msg));
-    }
-  });
-
-  ws.on('close', () => {
-    sessao[papel] = null;
-    const outro = papel === 'tecnico' ? sessao.cliente : sessao.tecnico;
-    if (outro && outro.readyState === WebSocket.OPEN) {
-      outro.send(JSON.stringify({ tipo: 'par_desconectado', papel }));
-    }
-    if (!sessao.tecnico && !sessao.cliente) {
-      setTimeout(() => { if (!sessao.tecnico && !sessao.cliente) sessions.delete(sessionId); }, 60000);
-    }
-  });
-
-  ws.on('error', (err) => console.error(`[ERRO WS] sessão ${sessionId}:`, err.message));
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Servidor rodando em http://localhost:${PORT}`));
+server.listen(PORT, () => {
+  console.log(`\n✅ Servidor rodando em http://localhost:${PORT}`);
+});
