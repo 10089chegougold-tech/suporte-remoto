@@ -169,7 +169,19 @@ conectarTecnico();
 
 function conectarTecnico(){
   ws = new WebSocket(`${SERVER}?papel=tecnico`);
-  ws.onopen = () => { setStatus(true); log('Painel conectado', 'ev'); };
+  ws.onopen = () => {
+    setStatus(true);
+    log('Painel conectado', 'ev');
+    // Se já estava atendendo um cliente, reconecta automaticamente
+    if (deviceAtual) {
+      setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ tipo: 'conectar_cliente', deviceToken: deviceAtual }));
+          log('Reconectando ao cliente anterior...', 'ev');
+        }
+      }, 1000);
+    }
+  };
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     switch(msg.tipo){
