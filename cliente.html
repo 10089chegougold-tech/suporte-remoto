@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suporte Remoto — Autorização</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.2.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#161b27;border:1px solid #2d3748;border-radius:16px;padding:32px;max-width:400px;width:100%;text-align:center}
+.icon-wrap{width:72px;height:72px;border-radius:50%;background:#1a3a2a;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.icon-wrap i{font-size:36px;color:#48bb78}
+h1{font-size:20px;font-weight:600;margin-bottom:8px}
+.sub{font-size:14px;color:#718096;line-height:1.6;margin-bottom:24px}
+.info-box{background:#1a202c;border:1px solid #2d3748;border-radius:10px;padding:14px;margin-bottom:24px;text-align:left}
+.info-row{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid #1e2433;font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-row i{font-size:16px;color:#4a5568;flex-shrink:0;margin-top:1px}
+.info-row p{color:#a0aec0;line-height:1.4}
+.info-row strong{color:#e2e8f0}
+.warn{background:#1a1500;border:1px solid #744210;border-radius:10px;padding:12px 14px;margin-bottom:24px;display:flex;align-items:flex-start;gap:10px;text-align:left}
+.warn i{font-size:16px;color:#f6ad55;flex-shrink:0;margin-top:1px}
+.warn p{font-size:12px;color:#f6ad55;line-height:1.5}
+.btn-allow{width:100%;padding:13px;background:#38a169;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+.btn-allow:hover{background:#2f855a}
+.btn-deny{width:100%;padding:13px;background:#1a202c;border:1px solid #2d3748;border-radius:10px;color:#a0aec0;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-deny:hover{background:#2d3748}
+.session-info{font-size:11px;color:#2d3748;margin-top:16px}
+.estado{text-align:center;padding:24px}
+.estado i{font-size:48px;display:block;margin-bottom:12px}
+.estado h2{font-size:18px;font-weight:600;margin-bottom:8px}
+.estado p{font-size:13px;color:#718096}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.disconnect-btn{margin-top:20px;padding:8px 20px;background:#2d1515;border:1px solid #744210;border-radius:8px;color:#fc8181;font-size:12px;cursor:pointer}
+.disconnect-btn:hover{background:#3d1a1a}
+</style>
+</head>
+<body>
+
+<div class="card" id="card-consent">
+  <div class="icon-wrap">
+    <i class="ti ti-shield-check"></i>
+  </div>
+  <h1>Solicitação de suporte</h1>
+  <p class="sub">Um técnico está solicitando acesso remoto ao seu dispositivo para prestar suporte.</p>
+
+  <div class="info-box">
+    <div class="info-row">
+      <i class="ti ti-eye"></i>
+      <p><strong>O técnico poderá ver:</strong><br>Sua tela em tempo real</p>
+    </div>
+    <div class="info-row">
+      <i class="ti ti-hand-finger"></i>
+      <p><strong>O técnico poderá controlar:</strong><br>Toques, navegação e configurações</p>
+    </div>
+    <div class="info-row">
+      <i class="ti ti-plug-x"></i>
+      <p><strong>Você pode encerrar:</strong><br>A qualquer momento pelo botão abaixo</p>
+    </div>
+  </div>
+
+  <div class="warn">
+    <i class="ti ti-alert-triangle"></i>
+    <p>Nunca forneça senhas pessoais, dados bancários ou códigos de verificação durante a sessão.</p>
+  </div>
+
+  <button class="btn-allow" onclick="aceitar()">
+    <i class="ti ti-check"></i> Permitir acesso
+  </button>
+  <button class="btn-deny" onclick="recusar()">
+    <i class="ti ti-x"></i> Recusar
+  </button>
+
+  <p class="session-info" id="session-info">Sessão: carregando...</p>
+</div>
+
+<div class="card" id="card-ativo" style="display:none">
+  <div class="estado">
+    <i class="ti ti-circle-check" style="color:#48bb78"></i>
+    <h2>Sessão ativa</h2>
+    <p>O técnico está conectado ao seu dispositivo.<br>Você pode encerrar a qualquer momento.</p>
+    <div style="margin-top:16px;padding:10px;background:#1a202c;border-radius:8px;font-size:12px;color:#718096">
+      <i class="ti ti-lock" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>
+      Sessão criptografada
+    </div>
+    <button class="disconnect-btn" onclick="recusar()">
+      <i class="ti ti-plug-x"></i> Encerrar sessão
+    </button>
+  </div>
+</div>
+
+<div class="card" id="card-recusado" style="display:none">
+  <div class="estado">
+    <i class="ti ti-circle-x" style="color:#fc8181"></i>
+    <h2>Acesso recusado</h2>
+    <p>Você recusou o acesso remoto. Pode fechar esta página.</p>
+  </div>
+</div>
+
+<div class="card" id="card-erro" style="display:none">
+  <div class="estado">
+    <i class="ti ti-alert-circle" style="color:#f6ad55"></i>
+    <h2>Sessão inválida</h2>
+    <p>Este link expirou ou é inválido.<br>Solicite um novo link ao técnico.</p>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const sessionId = params.get('s');
+const SERVER = location.origin.replace(/^http/, 'ws');
+let ws = null;
+
+if(!sessionId){
+  mostrar('card-erro');
+} else {
+  document.getElementById('session-info').textContent = `Sessão: ${sessionId}`;
+  conectar();
+}
+
+function conectar(){
+  ws = new WebSocket(`${SERVER}?s=${sessionId}&papel=cliente`);
+  ws.onopen = () => console.log('Conectado ao servidor');
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    switch(msg.tipo){
+      case 'par_desconectado':
+        mostrar('card-erro');
+        break;
+      case 'encerrar':
+        recusar();
+        break;
+    }
+  };
+  ws.onerror = () => mostrar('card-erro');
+}
+
+function aceitar(){
+  // Aqui o APK Android enviaria as permissões reais
+  // Na web, apenas sinaliza ao técnico
+  const info = {
+    modelo: navigator.userAgent.includes('Android') ? 'Android' : navigator.platform,
+    android: navigator.userAgent,
+    bateria: 'N/A (web)',
+    ram: 'N/A (web)',
+    wifi: navigator.onLine ? 'Conectado' : 'Desconectado'
+  };
+
+  if(ws && ws.readyState === WebSocket.OPEN){
+    ws.send(JSON.stringify({tipo:'consentimento', aceito:true}));
+    ws.send(JSON.stringify({tipo:'info_dispositivo', dados:info}));
+  }
+  mostrar('card-ativo');
+}
+
+function recusar(){
+  if(ws && ws.readyState === WebSocket.OPEN){
+    ws.send(JSON.stringify({tipo:'consentimento', aceito:false}));
+  }
+  mostrar('card-recusado');
+  if(ws) ws.close();
+}
+
+function mostrar(id){
+  ['card-consent','card-ativo','card-recusado','card-erro'].forEach(c=>{
+    document.getElementById(c).style.display = c===id ? 'block' : 'none';
+  });
+}
+</script>
+</body>
+</html>
