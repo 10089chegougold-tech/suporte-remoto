@@ -10,18 +10,15 @@ const wss = new WebSocket.Server({ server });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('../painel'));
+app.use(express.static(__dirname));
 
 // Clientes conectados aguardando atendimento
-// { clienteId: { ws, info, sessaoId } }
 const clientes = new Map();
 
 // Técnicos conectados
-// { tecnicoId: ws }
 const tecnicos = new Map();
 
 // Sessões ativas (técnico atendendo cliente)
-// { sessaoId: { tecnicoId, clienteId } }
 const sessoes = new Map();
 
 function broadcastTecnicos(msg) {
@@ -48,7 +45,6 @@ wss.on('connection', (ws, req) => {
     tecnicos.set(id, ws);
     console.log(`[TÉCNICO] Conectou: ${id}`);
 
-    // Envia lista atual de clientes
     ws.send(JSON.stringify({ tipo: 'lista_clientes', clientes: listaClientes() }));
 
     ws.on('message', (raw) => {
@@ -57,7 +53,6 @@ wss.on('connection', (ws, req) => {
 
       switch (msg.tipo) {
         case 'conectar_cliente': {
-          // Técnico escolheu um cliente para atender
           const cliente = clientes.get(msg.clienteId);
           if (!cliente || !cliente.ws || cliente.ws.readyState !== WebSocket.OPEN) {
             ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente não disponível' }));
@@ -67,10 +62,8 @@ wss.on('connection', (ws, req) => {
           sessoes.set(sessaoId, { tecnicoId: id, clienteId: msg.clienteId });
           cliente.sessaoId = sessaoId;
 
-          // Avisa cliente que técnico conectou
           cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou', sessaoId }));
 
-          // Avisa técnico com info do cliente
           ws.send(JSON.stringify({
             tipo: 'sessao_iniciada',
             sessaoId,
@@ -82,10 +75,13 @@ wss.on('connection', (ws, req) => {
         }
 
         default: {
-          // Repassa comando para o cliente da sessão
-          const sessao = sessoes.get(msg.sessaoId);
-          if (!sessao) return;
-          const cliente = clientes.get(sessao.clienteId);
+          // Repassa comando para o cliente — busca sessão pelo tecnicoId
+          let sessaoEncontrada = null;
+          sessoes.forEach((s, sid) => {
+            if (s.tecnicoId === id) sessaoEncontrada = s;
+          });
+          if (!sessaoEncontrada) return;
+          const cliente = clientes.get(sessaoEncontrada.clienteId);
           if (cliente?.ws?.readyState === WebSocket.OPEN) {
             cliente.ws.send(JSON.stringify(msg));
           }
@@ -103,7 +99,6 @@ wss.on('connection', (ws, req) => {
     clientes.set(id, { ws, info: {}, sessaoId: null });
     console.log(`[CLIENTE] Conectou: ${id}`);
 
-    // Avisa técnicos que novo cliente chegou
     broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
 
     ws.on('message', (raw) => {
@@ -115,13 +110,11 @@ wss.on('connection', (ws, req) => {
           const c = clientes.get(id);
           if (c) {
             c.info = msg.dados;
-            // Atualiza lista nos técnicos
             broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
           }
           break;
         }
         case 'frame_tela': {
-          // Repassa frame para o técnico da sessão
           const c = clientes.get(id);
           if (!c?.sessaoId) return;
           const sessao = sessoes.get(c.sessaoId);
@@ -133,7 +126,6 @@ wss.on('connection', (ws, req) => {
           break;
         }
         default: {
-          // Repassa para o técnico da sessão
           const c = clientes.get(id);
           if (!c?.sessaoId) return;
           const sessao = sessoes.get(c.sessaoId);
