@@ -119,6 +119,10 @@ wss.on('connection', (ws, req) => {
         return;
 
       case 'frame_tela':
+  if (sessao.tecnico && sessao.tecnico.readyState === WebSocket.OPEN) {
+    sessao.tecnico.send(JSON.stringify(msg));
+  }
+  return;
         // Frame de vídeo — repassa direto para o técnico sem log (alto volume)
         if (destino && destino.readyState === WebSocket.OPEN) {
           destino.send(raw);
