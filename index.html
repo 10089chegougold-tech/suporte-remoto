@@ -21,25 +21,31 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl i{font-size:15px;color:#4a5568;flex-shrink:0}
 .ctrl.danger:hover{background:#2d1515;color:#fc8181}
 .ctrl.danger:hover i{color:#fc8181}
-.center{display:flex;flex-direction:column;align-items:center;padding:20px;gap:12px;overflow:auto}
+.center{display:flex;flex-direction:column;align-items:center;padding:12px 20px;gap:8px;overflow:auto}
 .device{background:#1a202c;border:2px solid #2d3748;border-radius:28px;position:relative;overflow:hidden;flex-shrink:0}
 .screen{width:100%;height:100%;background:#0d1117;display:flex;align-items:center;justify-content:center;cursor:crosshair;position:relative}
 #stream-img{width:100%;height:100%;object-fit:contain;display:none}
 .screen-placeholder{text-align:center;color:#2d3748}
 .screen-placeholder i{font-size:36px;display:block;margin-bottom:8px}
 .screen-placeholder p{font-size:11px}
-.dpad{display:grid;grid-template-columns:repeat(3,36px);grid-template-rows:repeat(3,36px);gap:3px}
-.dp{background:#1e2433;border:1px solid #2d3748;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#718096;font-size:14px}
-.dp:hover{background:#2d3748;color:#e2e8f0}
-.dp.center{background:#252d3d}
+.nav-bar{display:flex;gap:6px;justify-content:center}
+.nav-btn{padding:8px 16px;background:#1e2433;border:1px solid #2d3748;border-radius:10px;color:#a0aec0;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;flex-direction:column}
+.nav-btn:hover{background:#2d3748;color:#fff}
+.nav-btn i{font-size:18px}
+.nav-btn span{font-size:9px}
 .tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .tbtn{padding:6px 10px;background:#1e2433;border:1px solid #2d3748;border-radius:8px;color:#a0aec0;cursor:pointer;font-size:11px;display:flex;align-items:center;gap:4px}
 .tbtn:hover{background:#2d3748;color:#fff}
 .tbtn i{font-size:13px}
-.txt-row{display:flex;gap:6px;width:100%}
-.txt-row input{flex:1;background:#1e2433;border:1px solid #2d3748;border-radius:8px;padding:7px 10px;color:#e2e8f0;font-size:12px;outline:none}
-.txt-row input:focus{border-color:#4299e1}
-.txt-row button{padding:7px 12px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px}
+.keyboard{background:#1a202c;border:1px solid #2d3748;border-radius:12px;padding:8px;width:100%}
+.kb-row{display:flex;gap:4px;margin-bottom:4px;justify-content:center}
+.kb-key{background:#252d3d;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;cursor:pointer;font-size:12px;padding:6px 4px;min-width:28px;text-align:center;flex:1;max-width:36px}
+.kb-key:hover{background:#2d3748}
+.kb-key:active{background:#4299e1;transform:scale(0.95)}
+.kb-key.wide{max-width:60px;font-size:10px}
+.kb-key.space{max-width:160px;flex:4}
+.kb-send{background:#4299e1;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:10px;padding:6px 8px;flex:1;max-width:50px}
+.kb-send:hover{background:#3182ce}
 .right{border-left:1px solid #2d3748;background:#161b27;padding:12px;display:flex;flex-direction:column;overflow:hidden}
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e2433;font-size:11px}
 .stat-label{color:#4a5568}.stat-val{color:#e2e8f0;font-weight:500}
@@ -115,25 +121,73 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
             </div>
           </div>
         </div>
-        <div class="dpad">
-          <div></div>
-          <button class="dp" onclick="sendCmd('dpad_up')"><i class="ti ti-chevron-up"></i></button>
-          <div></div>
-          <button class="dp" onclick="sendCmd('dpad_left')"><i class="ti ti-chevron-left"></i></button>
-          <button class="dp center" onclick="sendCmd('dpad_ok')"><i class="ti ti-check"></i></button>
-          <button class="dp" onclick="sendCmd('dpad_right')"><i class="ti ti-chevron-right"></i></button>
-          <div></div>
-          <button class="dp" onclick="sendCmd('dpad_down')"><i class="ti ti-chevron-down"></i></button>
-          <div></div>
+
+        <!-- Botões de navegação Android -->
+        <div class="nav-bar">
+          <button class="nav-btn" onclick="sendCmd('back')"><i class="ti ti-arrow-left"></i><span>Voltar</span></button>
+          <button class="nav-btn" onclick="sendCmd('home')"><i class="ti ti-circle"></i><span>Home</span></button>
+          <button class="nav-btn" onclick="sendCmd('recents')"><i class="ti ti-square"></i><span>Recentes</span></button>
+          <button class="nav-btn" onclick="send({tipo:'swipe',dir:'up'})"><i class="ti ti-arrow-up"></i><span>Swipe ↑</span></button>
+          <button class="nav-btn" onclick="send({tipo:'swipe',dir:'down'})"><i class="ti ti-arrow-down"></i><span>Swipe ↓</span></button>
+          <button class="nav-btn" onclick="toggleStream()"><i class="ti ti-player-play" id="stream-icon"></i><span id="stream-label">Stream</span></button>
         </div>
-        <div class="tools">
-          <button class="tbtn" onclick="toggleStream()"><i class="ti ti-player-play" id="stream-icon"></i> <span id="stream-label">Stream</span></button>
-          <button class="tbtn" onclick="send({tipo:'swipe',dir:'up'})"><i class="ti ti-arrow-narrow-up"></i> Swipe ↑</button>
-          <button class="tbtn" onclick="send({tipo:'swipe',dir:'down'})"><i class="ti ti-arrow-narrow-down"></i> Swipe ↓</button>
-        </div>
-        <div class="txt-row">
-          <input type="text" id="txt" placeholder="Enviar texto ao dispositivo..." onkeydown="if(event.key==='Enter')enviarTexto()">
-          <button onclick="enviarTexto()"><i class="ti ti-send"></i></button>
+
+        <!-- Teclado virtual -->
+        <div class="keyboard">
+          <div class="kb-row">
+            <button class="kb-key" onclick="kbTap('1')">1</button>
+            <button class="kb-key" onclick="kbTap('2')">2</button>
+            <button class="kb-key" onclick="kbTap('3')">3</button>
+            <button class="kb-key" onclick="kbTap('4')">4</button>
+            <button class="kb-key" onclick="kbTap('5')">5</button>
+            <button class="kb-key" onclick="kbTap('6')">6</button>
+            <button class="kb-key" onclick="kbTap('7')">7</button>
+            <button class="kb-key" onclick="kbTap('8')">8</button>
+            <button class="kb-key" onclick="kbTap('9')">9</button>
+            <button class="kb-key" onclick="kbTap('0')">0</button>
+            <button class="kb-key wide" onclick="kbSpecial('del')">⌫</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-key" onclick="kbTap('q')">q</button>
+            <button class="kb-key" onclick="kbTap('w')">w</button>
+            <button class="kb-key" onclick="kbTap('e')">e</button>
+            <button class="kb-key" onclick="kbTap('r')">r</button>
+            <button class="kb-key" onclick="kbTap('t')">t</button>
+            <button class="kb-key" onclick="kbTap('y')">y</button>
+            <button class="kb-key" onclick="kbTap('u')">u</button>
+            <button class="kb-key" onclick="kbTap('i')">i</button>
+            <button class="kb-key" onclick="kbTap('o')">o</button>
+            <button class="kb-key" onclick="kbTap('p')">p</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-key" onclick="kbTap('a')">a</button>
+            <button class="kb-key" onclick="kbTap('s')">s</button>
+            <button class="kb-key" onclick="kbTap('d')">d</button>
+            <button class="kb-key" onclick="kbTap('f')">f</button>
+            <button class="kb-key" onclick="kbTap('g')">g</button>
+            <button class="kb-key" onclick="kbTap('h')">h</button>
+            <button class="kb-key" onclick="kbTap('j')">j</button>
+            <button class="kb-key" onclick="kbTap('k')">k</button>
+            <button class="kb-key" onclick="kbTap('l')">l</button>
+            <button class="kb-key wide" onclick="kbSpecial('enter')">↵</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-key" onclick="kbTap('z')">z</button>
+            <button class="kb-key" onclick="kbTap('x')">x</button>
+            <button class="kb-key" onclick="kbTap('c')">c</button>
+            <button class="kb-key" onclick="kbTap('v')">v</button>
+            <button class="kb-key" onclick="kbTap('b')">b</button>
+            <button class="kb-key" onclick="kbTap('n')">n</button>
+            <button class="kb-key" onclick="kbTap('m')">m</button>
+            <button class="kb-key" onclick="kbTap('.')">.</button>
+            <button class="kb-key" onclick="kbTap(',')">','</button>
+            <button class="kb-key" onclick="kbTap('@')">@</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-key wide" onclick="kbSpecial('tab')">Tab</button>
+            <button class="kb-key space" onclick="kbTap(' ')">Espaço</button>
+            <button class="kb-key wide" onclick="kbSpecial('search')">🔍</button>
+          </div>
         </div>
       </div>
 
@@ -172,7 +226,6 @@ function conectarTecnico(){
   ws.onopen = () => {
     setStatus(true);
     log('Painel conectado', 'ev');
-    // Se já estava atendendo um cliente, reconecta automaticamente
     if (deviceAtual) {
       setTimeout(() => {
         if (ws.readyState === WebSocket.OPEN) {
@@ -265,6 +318,15 @@ function handleToque(e){
   send({ tipo:'toque', x:+xPct, y:+yPct, largura: dispositivoLargura||1080, altura: dispositivoAltura||2340 });
 }
 
+function kbTap(char){
+  send({ tipo:'texto', valor: char });
+}
+
+function kbSpecial(key){
+  const map = { del:'del', enter:'enter', tab:'tab', search:'search' };
+  send({ tipo:'cmd', cmd: 'kb_' + map[key] });
+}
+
 function toggleStream(){
   streaming = !streaming;
   send({ tipo: streaming ? 'stream_start' : 'stream_stop' });
@@ -277,11 +339,6 @@ function mostrarFrame(base64){
   img.src = 'data:image/jpeg;base64,' + base64;
   img.style.display = 'block';
   document.getElementById('placeholder').style.display = 'none';
-}
-
-function enviarTexto(){
-  const v = document.getElementById('txt').value;
-  if(v){ send({tipo:'texto', valor:v}); document.getElementById('txt').value=''; }
 }
 
 function atualizarDispositivo(info){
