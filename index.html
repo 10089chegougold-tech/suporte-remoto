@@ -247,6 +247,16 @@ function abrirPainel(){
   document.getElementById('tela-painel').style.display = 'flex';
   document.getElementById('btn-voltar').style.display = 'block';
   document.getElementById('session-id-top').textContent = `Sessão: ${sessaoAtual}`;
+  // Inicia stream automaticamente
+  streaming = true;
+  send({ tipo: 'stream_start' });
+  document.getElementById('stream-icon').className = 'ti ti-player-pause';
+  document.getElementById('stream-label').textContent = 'Parar';
+}{
+  document.getElementById('tela-clientes').style.display = 'none';
+  document.getElementById('tela-painel').style.display = 'flex';
+  document.getElementById('btn-voltar').style.display = 'block';
+  document.getElementById('session-id-top').textContent = `Sessão: ${sessaoAtual}`;
 }
 
 function voltarLista(){
