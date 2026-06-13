@@ -56,7 +56,26 @@ wss.on('connection', (ws, req) => {
           ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente offline' }));
           return;
         }
-        // Libera técnico anterior se existia
+        // Libera cliente anterior MAS não desconecta — técnico pode voltar a ele
+        if (t.deviceToken && t.deviceToken !== msg.deviceToken) {
+          const anterior = clientes.get(t.deviceToken);
+          if (anterior) anterior.tecnicoId = null;
+        }
+        cliente.tecnicoId = tecnicoId;
+        t.deviceToken = msg.deviceToken;
+        cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
+        ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: cliente.info }));
+        broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
+        return;
+      }
+
+      if (msg.tipo === 'voltar_cliente') {
+        // Técnico voltou para um cliente que já atendeu antes
+        const cliente = clientes.get(msg.deviceToken);
+        if (!cliente || cliente.ws.readyState !== WebSocket.OPEN) {
+          ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente offline' }));
+          return;
+        }
         if (t.deviceToken && t.deviceToken !== msg.deviceToken) {
           const anterior = clientes.get(t.deviceToken);
           if (anterior) anterior.tecnicoId = null;
