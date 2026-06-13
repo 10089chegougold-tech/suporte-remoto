@@ -6,7 +6,15 @@ const crypto = require('crypto');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+
+// Habilita compressão WebSocket para reduzir tamanho dos frames
+const wss = new WebSocket.Server({
+  server,
+  perMessageDeflate: {
+    zlibDeflateOptions: { level: 1 }, // nível 1 = mais rápido, menos compressão
+    threshold: 1024 // só comprime mensagens > 1KB (screenshots)
+  }
+});
 
 app.use(cors());
 app.use(express.json());
@@ -35,48 +43,38 @@ wss.on('connection', (ws, req) => {
   const papel = url.searchParams.get('papel');
   const deviceToken = url.searchParams.get('token');
 
+  // Aumenta buffer para screenshots grandes
+  ws.binaryType = 'arraybuffer';
+
   if (papel === 'tecnico') {
     const tecnicoId = crypto.randomBytes(4).toString('hex').toUpperCase();
     tecnicos.set(tecnicoId, { ws, deviceToken: null });
-    console.log(`[TÉCNICO] Conectou: ${tecnicoId}`);
     ws.send(JSON.stringify({ tipo: 'lista_clientes', clientes: listaClientes() }));
 
     ws.on('message', (raw) => {
-      let msg; try { msg = JSON.parse(raw); } catch { return; }
+      let msg;
+      try { msg = JSON.parse(raw); } catch { return; }
 
-      switch (msg.tipo) {
-        case 'conectar_cliente': {
-          const cliente = clientes.get(msg.deviceToken);
-          if (!cliente || cliente.ws.readyState !== WebSocket.OPEN) {
-            ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente não disponível' }));
-            return;
-          }
-          cliente.tecnicoId = tecnicoId;
-          tecnicos.get(tecnicoId).deviceToken = msg.deviceToken;
-          cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
-          ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: cliente.info }));
-          console.log(`[SESSÃO] Técnico ${tecnicoId} atendendo ${msg.deviceToken}`);
-          broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
-          break;
+      if (msg.tipo === 'conectar_cliente') {
+        const cliente = clientes.get(msg.deviceToken);
+        if (!cliente || cliente.ws.readyState !== WebSocket.OPEN) {
+          ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente não disponível' }));
+          return;
         }
-        case 'mensagem': {
-          const t = tecnicos.get(tecnicoId);
-          if (!t?.deviceToken) return;
-          const cliente = clientes.get(t.deviceToken);
-          if (cliente?.ws.readyState === WebSocket.OPEN) {
-            cliente.ws.send(JSON.stringify(msg));
-          }
-          break;
-        }
-        default: {
-          const t = tecnicos.get(tecnicoId);
-          if (!t?.deviceToken) return;
-          const cliente = clientes.get(t.deviceToken);
-          if (cliente?.ws.readyState === WebSocket.OPEN) {
-            cliente.ws.send(JSON.stringify(msg));
-          }
-          break;
-        }
+        cliente.tecnicoId = tecnicoId;
+        tecnicos.get(tecnicoId).deviceToken = msg.deviceToken;
+        cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
+        ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: cliente.info }));
+        broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
+        return;
+      }
+
+      // Repassa direto pro cliente sem re-serializar
+      const t = tecnicos.get(tecnicoId);
+      if (!t?.deviceToken) return;
+      const cliente = clientes.get(t.deviceToken);
+      if (cliente?.ws.readyState === WebSocket.OPEN) {
+        cliente.ws.send(raw); // raw bytes, sem parse/stringify
       }
     });
 
@@ -92,14 +90,12 @@ wss.on('connection', (ws, req) => {
         }
       }
       tecnicos.delete(tecnicoId);
-      console.log(`[TÉCNICO] Desconectou: ${tecnicoId}`);
     });
 
   } else if (papel === 'cliente' && deviceToken) {
     const existing = clientes.get(deviceToken);
     if (existing) {
       existing.ws = ws;
-      console.log(`[CLIENTE] Reconectou: ${deviceToken}`);
       if (existing.tecnicoId) {
         const t = tecnicos.get(existing.tecnicoId);
         if (t?.ws.readyState === WebSocket.OPEN) {
@@ -110,61 +106,45 @@ wss.on('connection', (ws, req) => {
       }
     } else {
       clientes.set(deviceToken, { ws, info: {}, tecnicoId: null });
-      console.log(`[CLIENTE] Novo: ${deviceToken}`);
     }
 
     broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
 
     ws.on('message', (raw) => {
-      let msg; try { msg = JSON.parse(raw); } catch { return; }
+      let msg;
+      try { msg = JSON.parse(raw); } catch { return; }
       const cliente = clientes.get(deviceToken);
 
-      switch (msg.tipo) {
-        case 'info_dispositivo': {
-          if (cliente) {
-            cliente.info = msg.dados;
-            broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
-          }
-          break;
+      if (msg.tipo === 'info_dispositivo') {
+        if (cliente) {
+          cliente.info = msg.dados;
+          broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
         }
-        case 'frame_tela': {
-          if (!cliente?.tecnicoId) return;
-          const t = tecnicos.get(cliente.tecnicoId);
-          if (t?.ws.readyState === WebSocket.OPEN) t.ws.send(raw.toString());
-          break;
-        }
-        case 'stream_pronto': {
-          if (!cliente?.tecnicoId) return;
-          const t = tecnicos.get(cliente.tecnicoId);
-          if (t?.ws.readyState === WebSocket.OPEN) {
-            t.ws.send(JSON.stringify({ tipo: 'stream_iniciado' }));
-          }
-          break;
-        }
-        case 'arvore_tela': {
-          // Repassa árvore de acessibilidade para o técnico
-          if (!cliente?.tecnicoId) return;
-          const t = tecnicos.get(cliente.tecnicoId);
-          if (t?.ws.readyState === WebSocket.OPEN) {
-            t.ws.send(JSON.stringify(msg));
-          }
-          break;
-        }
-        default: {
-          if (!cliente?.tecnicoId) return;
-          const t = tecnicos.get(cliente.tecnicoId);
-          if (t?.ws.readyState === WebSocket.OPEN) t.ws.send(JSON.stringify(msg));
-          break;
-        }
+        return;
+      }
+
+      // Repassa direto pro técnico sem re-serializar
+      if (!cliente?.tecnicoId) return;
+      const t = tecnicos.get(cliente.tecnicoId);
+      if (t?.ws.readyState === WebSocket.OPEN) {
+        t.ws.send(raw); // raw bytes, sem parse/stringify
       }
     });
 
     ws.on('close', () => {
-      console.log(`[CLIENTE] Desconectou: ${deviceToken}`);
+      const cliente = clientes.get(deviceToken);
+      if (cliente) {
+        if (cliente.tecnicoId) {
+          const t = tecnicos.get(cliente.tecnicoId);
+          if (t?.ws.readyState === WebSocket.OPEN) {
+            t.ws.send(JSON.stringify({ tipo: 'cliente_desconectou' }));
+          }
+        }
+      }
       broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
     });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Servidor rodando em http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`✅ Servidor rodando na porta ${PORT}`));
