@@ -237,6 +237,12 @@ function onSessao(msg) {
   setTimeout(() => cmd('solicitar_tela'), 600);
 }
 
+function atender(token, emAtendimento) {
+  // Se já está em atendimento por outro técnico, avisa
+  const tipo = emAtendimento ? 'voltar_cliente' : 'conectar_cliente';
+  send({tipo, deviceToken: token});
+}
+
 function voltarLista() {
   if (overlayAtivo) toggleOverlay();
   deviceAtual = null;
