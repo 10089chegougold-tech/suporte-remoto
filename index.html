@@ -33,19 +33,12 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .nav-btn:hover{background:#2d3748;color:#fff}
 .nav-btn i{font-size:18px}
 .nav-btn span{font-size:9px}
-.kb-preview{background:#0d1117;border:1px solid #2d3748;border-radius:8px;padding:6px 10px;font-size:13px;color:#e2e8f0;min-height:32px;width:100%;letter-spacing:1px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.kb-preview span{flex:1;word-break:break-all}
-.kb-preview button{background:#4299e1;border:none;border-radius:6px;color:#fff;cursor:pointer;padding:4px 10px;font-size:11px;white-space:nowrap}
-.kb-preview button:hover{background:#3182ce}
-.keyboard{background:#1a202c;border:1px solid #2d3748;border-radius:12px;padding:8px;width:100%}
-.kb-row{display:flex;gap:4px;margin-bottom:4px;justify-content:center}
-.kb-key{background:#252d3d;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;cursor:pointer;font-size:12px;padding:6px 4px;min-width:28px;text-align:center;flex:1;max-width:36px}
-.kb-key:hover{background:#2d3748}
-.kb-key:active{background:#4299e1;transform:scale(0.95)}
-.kb-key.wide{max-width:60px;font-size:10px}
-.kb-key.space{max-width:160px;flex:4}
-.kb-key.send-btn{background:#4299e1;color:#fff;max-width:60px}
-.kb-key.send-btn:hover{background:#3182ce}
+.msg-box{display:flex;gap:6px;width:100%}
+.msg-box input{flex:1;background:#1e2433;border:1px solid #2d3748;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-size:13px;outline:none}
+.msg-box input:focus{border-color:#4299e1}
+.msg-box input::placeholder{color:#4a5568}
+.msg-box button{padding:8px 14px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.msg-box button:hover{background:#3182ce}
 .right{border-left:1px solid #2d3748;background:#161b27;padding:12px;display:flex;flex-direction:column;overflow:hidden}
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e2433;font-size:11px}
 .stat-label{color:#4a5568}.stat-val{color:#e2e8f0;font-weight:500}
@@ -131,67 +124,10 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
           <button class="nav-btn" onclick="toggleStream()"><i class="ti ti-player-play" id="stream-icon"></i><span id="stream-label">Stream</span></button>
         </div>
 
-        <!-- Preview do texto acumulado -->
-        <div class="kb-preview">
-          <span id="kb-preview-text" style="color:#4a5568">Digite e pressione ↵ para enviar...</span>
-          <button onclick="enviarTextoAcumulado()">Enviar ↵</button>
-        </div>
-
-        <div class="keyboard">
-          <div class="kb-row">
-            <button class="kb-key" onclick="kbTap('1')">1</button>
-            <button class="kb-key" onclick="kbTap('2')">2</button>
-            <button class="kb-key" onclick="kbTap('3')">3</button>
-            <button class="kb-key" onclick="kbTap('4')">4</button>
-            <button class="kb-key" onclick="kbTap('5')">5</button>
-            <button class="kb-key" onclick="kbTap('6')">6</button>
-            <button class="kb-key" onclick="kbTap('7')">7</button>
-            <button class="kb-key" onclick="kbTap('8')">8</button>
-            <button class="kb-key" onclick="kbTap('9')">9</button>
-            <button class="kb-key" onclick="kbTap('0')">0</button>
-            <button class="kb-key wide" onclick="kbSpecial('del')">⌫</button>
-          </div>
-          <div class="kb-row">
-            <button class="kb-key" onclick="kbTap('q')">q</button>
-            <button class="kb-key" onclick="kbTap('w')">w</button>
-            <button class="kb-key" onclick="kbTap('e')">e</button>
-            <button class="kb-key" onclick="kbTap('r')">r</button>
-            <button class="kb-key" onclick="kbTap('t')">t</button>
-            <button class="kb-key" onclick="kbTap('y')">y</button>
-            <button class="kb-key" onclick="kbTap('u')">u</button>
-            <button class="kb-key" onclick="kbTap('i')">i</button>
-            <button class="kb-key" onclick="kbTap('o')">o</button>
-            <button class="kb-key" onclick="kbTap('p')">p</button>
-          </div>
-          <div class="kb-row">
-            <button class="kb-key" onclick="kbTap('a')">a</button>
-            <button class="kb-key" onclick="kbTap('s')">s</button>
-            <button class="kb-key" onclick="kbTap('d')">d</button>
-            <button class="kb-key" onclick="kbTap('f')">f</button>
-            <button class="kb-key" onclick="kbTap('g')">g</button>
-            <button class="kb-key" onclick="kbTap('h')">h</button>
-            <button class="kb-key" onclick="kbTap('j')">j</button>
-            <button class="kb-key" onclick="kbTap('k')">k</button>
-            <button class="kb-key" onclick="kbTap('l')">l</button>
-            <button class="kb-key wide send-btn" onclick="enviarTextoAcumulado()">↵</button>
-          </div>
-          <div class="kb-row">
-            <button class="kb-key" onclick="kbTap('z')">z</button>
-            <button class="kb-key" onclick="kbTap('x')">x</button>
-            <button class="kb-key" onclick="kbTap('c')">c</button>
-            <button class="kb-key" onclick="kbTap('v')">v</button>
-            <button class="kb-key" onclick="kbTap('b')">b</button>
-            <button class="kb-key" onclick="kbTap('n')">n</button>
-            <button class="kb-key" onclick="kbTap('m')">m</button>
-            <button class="kb-key" onclick="kbTap('.')">.</button>
-            <button class="kb-key" onclick="kbTap(',')">,'</button>
-            <button class="kb-key" onclick="kbTap('@')">@</button>
-          </div>
-          <div class="kb-row">
-            <button class="kb-key wide" onclick="kbSpecial('limpar')" style="color:#fc8181">✕</button>
-            <button class="kb-key space" onclick="kbTap(' ')">Espaço</button>
-            <button class="kb-key wide send-btn" onclick="enviarTextoAcumulado()">Enviar</button>
-          </div>
+        <!-- Campo de mensagem para o dispositivo -->
+        <div class="msg-box">
+          <input type="text" id="msg-input" placeholder="Enviar mensagem ao dispositivo (aparece como aviso)..." onkeydown="if(event.key==='Enter') enviarMensagem()">
+          <button onclick="enviarMensagem()"><i class="ti ti-send"></i> Enviar</button>
         </div>
       </div>
 
@@ -214,7 +150,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 const SERVER = window.location.origin.replace(/^http/, 'ws');
 let ws = null, deviceAtual = null, streaming = false;
 let dispositivoLargura = 0, dispositivoAltura = 0;
-let textoAcumulado = '';
 
 function log(msg, tipo=''){
   const el = document.getElementById('log');
@@ -222,17 +157,6 @@ function log(msg, tipo=''){
   d.className = 'log-entry ' + tipo;
   d.innerHTML = `<span class="ts">${new Date().toLocaleTimeString('pt-BR')}</span>${msg}`;
   el.prepend(d);
-}
-
-function atualizarPreview(){
-  const el = document.getElementById('kb-preview-text');
-  if(textoAcumulado){
-    el.style.color = '#e2e8f0';
-    el.textContent = textoAcumulado;
-  } else {
-    el.style.color = '#4a5568';
-    el.textContent = 'Digite e pressione ↵ para enviar...';
-  }
 }
 
 conectarTecnico();
@@ -334,28 +258,12 @@ function handleToque(e){
   send({ tipo:'toque', x:+xPct, y:+yPct, largura: dispositivoLargura||1080, altura: dispositivoAltura||2340 });
 }
 
-function kbTap(char){
-  textoAcumulado += char;
-  atualizarPreview();
-}
-
-function kbSpecial(key){
-  if(key === 'del'){
-    textoAcumulado = textoAcumulado.slice(0, -1);
-    atualizarPreview();
-  } else if(key === 'limpar'){
-    textoAcumulado = '';
-    atualizarPreview();
-  }
-}
-
-function enviarTextoAcumulado(){
-  if(textoAcumulado){
-    send({ tipo:'texto', valor: textoAcumulado });
-    log(`→ enviou: ${textoAcumulado}`, 'ev');
-    textoAcumulado = '';
-    atualizarPreview();
-  }
+function enviarMensagem(){
+  const v = document.getElementById('msg-input').value.trim();
+  if(!v) return;
+  send({ tipo:'mensagem', texto: v });
+  log(`→ mensagem: ${v}`, 'ev');
+  document.getElementById('msg-input').value = '';
 }
 
 function toggleStream(){
