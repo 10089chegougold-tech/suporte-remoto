@@ -12,9 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Clientes: { deviceToken: { ws, info, tecnicoId } }
 const clientes = new Map();
-// Técnicos: { tecnicoId: { ws, deviceToken } }
 const tecnicos = new Map();
 
 function broadcastTecnicos(msg) {
@@ -55,11 +53,20 @@ wss.on('connection', (ws, req) => {
           }
           cliente.tecnicoId = tecnicoId;
           tecnicos.get(tecnicoId).deviceToken = msg.deviceToken;
-
           cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
           ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: cliente.info }));
           console.log(`[SESSÃO] Técnico ${tecnicoId} atendendo ${msg.deviceToken}`);
           broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
+          break;
+        }
+        case 'mensagem': {
+          const t = tecnicos.get(tecnicoId);
+          if (!t?.deviceToken) { console.log(`[MENSAGEM] Técnico ${tecnicoId} sem cliente`); return; }
+          const cliente = clientes.get(t.deviceToken);
+          if (cliente?.ws.readyState === WebSocket.OPEN) {
+            cliente.ws.send(JSON.stringify(msg));
+            console.log(`[MENSAGEM] Enviado para ${t.deviceToken}: ${msg.texto}`);
+          }
           break;
         }
         default: {
@@ -94,7 +101,6 @@ wss.on('connection', (ws, req) => {
     if (existing) {
       existing.ws = ws;
       console.log(`[CLIENTE] Reconectou: ${deviceToken}`);
-      // Se tinha técnico ativo, manda tecnico_conectou para reiniciar stream
       if (existing.tecnicoId) {
         const t = tecnicos.get(existing.tecnicoId);
         if (t?.ws.readyState === WebSocket.OPEN) {
@@ -113,7 +119,6 @@ wss.on('connection', (ws, req) => {
 
     ws.on('message', (raw) => {
       let msg; try { msg = JSON.parse(raw); } catch { return; }
-
       const cliente = clientes.get(deviceToken);
 
       switch (msg.tipo) {
