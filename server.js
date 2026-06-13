@@ -12,17 +12,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Cada cliente tem um token único — nunca sobrescreve outro
-const clientes = new Map();  // token -> { ws, info, tecnicoId }
-const tecnicos = new Map();  // tecnicoId -> { ws, deviceToken }
+// Clientes persistem mesmo offline — só saem se ficar 1h sem reconectar
+const clientes = new Map(); // token -> { ws, info, tecnicoId, ultimaVez }
+const tecnicos = new Map(); // tecnicoId -> { ws, deviceToken }
 
 function listaClientes() {
   const lista = [];
   clientes.forEach((c, token) => {
-    // Só lista clientes com WebSocket ativo
-    if (c.ws.readyState === WebSocket.OPEN) {
-      lista.push({ deviceToken: token, info: c.info, emAtendimento: !!c.tecnicoId });
-    }
+    lista.push({
+      deviceToken: token,
+      info: c.info,
+      online: c.ws && c.ws.readyState === WebSocket.OPEN,
+      emAtendimento: !!c.tecnicoId
+    });
   });
   return lista;
 }
@@ -34,6 +36,24 @@ function broadcastTecnicos(msg) {
   });
 }
 
+function repassarParaCliente(tecnicoId, msg) {
+  const t = tecnicos.get(tecnicoId);
+  if (!t?.deviceToken) return;
+  const c = clientes.get(t.deviceToken);
+  if (c?.ws?.readyState === WebSocket.OPEN) {
+    c.ws.send(JSON.stringify(msg));
+  }
+}
+
+function repassarParaTecnico(deviceToken, msg) {
+  const c = clientes.get(deviceToken);
+  if (!c?.tecnicoId) return;
+  const t = tecnicos.get(c.tecnicoId);
+  if (t?.ws?.readyState === WebSocket.OPEN) {
+    t.ws.send(JSON.stringify(msg));
+  }
+}
+
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
   const papel = url.searchParams.get('papel');
@@ -43,147 +63,161 @@ wss.on('connection', (ws, req) => {
   if (papel === 'tecnico') {
     const tecnicoId = crypto.randomBytes(4).toString('hex').toUpperCase();
     tecnicos.set(tecnicoId, { ws, deviceToken: null });
+    console.log(`[TÉCNICO +] ${tecnicoId}`);
+
+    // Envia lista completa incluindo offline
     ws.send(JSON.stringify({ tipo: 'lista_clientes', clientes: listaClientes() }));
-    console.log(`[+] Técnico ${tecnicoId}`);
 
     ws.on('message', (raw) => {
       let msg; try { msg = JSON.parse(raw); } catch { return; }
       const t = tecnicos.get(tecnicoId);
 
-      if (msg.tipo === 'conectar_cliente') {
-        const cliente = clientes.get(msg.deviceToken);
-        if (!cliente || cliente.ws.readyState !== WebSocket.OPEN) {
+      // Entrar em sessão com cliente
+      if (msg.tipo === 'conectar_cliente' || msg.tipo === 'voltar_cliente') {
+        const c = clientes.get(msg.deviceToken);
+        if (!c) {
+          ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente não encontrado' }));
+          return;
+        }
+        if (!c.ws || c.ws.readyState !== WebSocket.OPEN) {
           ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente offline' }));
           return;
         }
-        // Libera cliente anterior MAS não desconecta — técnico pode voltar a ele
+        // Libera cliente anterior
         if (t.deviceToken && t.deviceToken !== msg.deviceToken) {
           const anterior = clientes.get(t.deviceToken);
-          if (anterior) anterior.tecnicoId = null;
+          if (anterior) {
+            anterior.tecnicoId = null;
+            if (anterior.ws?.readyState === WebSocket.OPEN) {
+              anterior.ws.send(JSON.stringify({ tipo: 'tecnico_desconectou' }));
+            }
+          }
         }
-        cliente.tecnicoId = tecnicoId;
+        c.tecnicoId = tecnicoId;
         t.deviceToken = msg.deviceToken;
-        cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
-        ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: cliente.info }));
+        c.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
+        ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: c.info }));
+        console.log(`[SESSÃO] Técnico ${tecnicoId} → ${msg.deviceToken}`);
         broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
         return;
       }
 
-      if (msg.tipo === 'voltar_cliente') {
-        // Técnico voltou para um cliente que já atendeu antes
-        const cliente = clientes.get(msg.deviceToken);
-        if (!cliente || cliente.ws.readyState !== WebSocket.OPEN) {
-          ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente offline' }));
-          return;
+      // Sair da sessão atual (voltar para lista)
+      if (msg.tipo === 'sair_sessao') {
+        if (t.deviceToken) {
+          const c = clientes.get(t.deviceToken);
+          if (c) {
+            c.tecnicoId = null;
+            if (c.ws?.readyState === WebSocket.OPEN) {
+              c.ws.send(JSON.stringify({ tipo: 'tecnico_desconectou' }));
+            }
+          }
+          t.deviceToken = null;
         }
-        if (t.deviceToken && t.deviceToken !== msg.deviceToken) {
-          const anterior = clientes.get(t.deviceToken);
-          if (anterior) anterior.tecnicoId = null;
-        }
-        cliente.tecnicoId = tecnicoId;
-        t.deviceToken = msg.deviceToken;
-        cliente.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
-        ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: cliente.info }));
         broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
         return;
       }
 
-      // Repassa pro cliente
-      if (!t?.deviceToken) return;
-      const cliente = clientes.get(t.deviceToken);
-      if (cliente?.ws.readyState === WebSocket.OPEN) {
-        cliente.ws.send(JSON.stringify(msg));
-      }
+      // Repassa qualquer outro comando pro cliente atual
+      repassarParaCliente(tecnicoId, msg);
     });
 
     ws.on('close', () => {
       const t = tecnicos.get(tecnicoId);
       if (t?.deviceToken) {
-        const cliente = clientes.get(t.deviceToken);
-        if (cliente) {
-          cliente.tecnicoId = null;
-          if (cliente.ws.readyState === WebSocket.OPEN) {
-            cliente.ws.send(JSON.stringify({ tipo: 'tecnico_desconectou' }));
+        const c = clientes.get(t.deviceToken);
+        if (c) {
+          c.tecnicoId = null;
+          if (c.ws?.readyState === WebSocket.OPEN) {
+            c.ws.send(JSON.stringify({ tipo: 'tecnico_desconectou' }));
           }
         }
       }
       tecnicos.delete(tecnicoId);
-      console.log(`[-] Técnico ${tecnicoId}`);
+      console.log(`[TÉCNICO -] ${tecnicoId}`);
     });
 
   // ── CLIENTE ───────────────────────────────────────────────────────────
   } else if (papel === 'cliente' && deviceToken) {
-    // Se já existe esse token com conexão ativa, fecha a antiga
     const existing = clientes.get(deviceToken);
-    if (existing && existing.ws.readyState === WebSocket.OPEN) {
-      existing.ws.close(1000, 'Reconexão');
-    }
 
-    // Registra novo WebSocket para esse token
-    clientes.set(deviceToken, { ws, info: existing?.info || {}, tecnicoId: existing?.tecnicoId || null });
-    console.log(`[+] Cliente ${deviceToken}`);
-
-    // Se tinha técnico, reconecta
-    const cliente = clientes.get(deviceToken);
-    if (cliente.tecnicoId) {
-      const t = tecnicos.get(cliente.tecnicoId);
-      if (t?.ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
-      } else {
-        cliente.tecnicoId = null;
+    if (existing) {
+      // Reconexão — atualiza só o WebSocket, preserva info e tecnicoId
+      if (existing.ws?.readyState === WebSocket.OPEN) {
+        existing.ws.close(1000, 'Reconexão');
       }
+      existing.ws = ws;
+      existing.ultimaVez = Date.now();
+      console.log(`[CLIENTE ~] Reconectou: ${deviceToken}`);
+
+      // Se tinha técnico ativo, reconecta a sessão
+      if (existing.tecnicoId) {
+        const t = tecnicos.get(existing.tecnicoId);
+        if (t?.ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
+          t.ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken, info: existing.info }));
+        } else {
+          existing.tecnicoId = null;
+        }
+      }
+    } else {
+      // Novo cliente
+      clientes.set(deviceToken, { ws, info: {}, tecnicoId: null, ultimaVez: Date.now() });
+      console.log(`[CLIENTE +] Novo: ${deviceToken}`);
     }
 
     broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
 
     ws.on('message', (raw) => {
       let msg; try { msg = JSON.parse(raw); } catch { return; }
-      const cliente = clientes.get(deviceToken);
+      const c = clientes.get(deviceToken);
 
       if (msg.tipo === 'info_dispositivo') {
-        if (cliente) {
-          cliente.info = msg.dados;
+        if (c) {
+          c.info = msg.dados;
           broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
         }
         return;
       }
 
-      if (!cliente?.tecnicoId) return;
-      const t = tecnicos.get(cliente.tecnicoId);
-      if (t?.ws.readyState === WebSocket.OPEN) {
-        t.ws.send(JSON.stringify(msg));
-      }
+      repassarParaTecnico(deviceToken, msg);
     });
 
     ws.on('close', () => {
-      console.log(`[-] Cliente ${deviceToken}`);
-      const cliente = clientes.get(deviceToken);
-      if (cliente?.tecnicoId) {
-        const t = tecnicos.get(cliente.tecnicoId);
-        if (t?.ws.readyState === WebSocket.OPEN) {
-          t.ws.send(JSON.stringify({ tipo: 'cliente_desconectou' }));
+      console.log(`[CLIENTE ~] Desconectou: ${deviceToken}`);
+      const c = clientes.get(deviceToken);
+      if (c) {
+        c.ultimaVez = Date.now();
+        // NÃO remove da lista — cliente reconecta em 1.5s
+        // Notifica técnico que cliente ficou offline
+        if (c.tecnicoId) {
+          const t = tecnicos.get(c.tecnicoId);
+          if (t?.ws.readyState === WebSocket.OPEN) {
+            t.ws.send(JSON.stringify({ tipo: 'cliente_offline' }));
+          }
         }
       }
-      // Remove da lista imediatamente
-      clientes.delete(deviceToken);
       broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
     });
   }
 });
 
-// Limpa clientes com WebSocket morto a cada 30s
+// Remove clientes que ficaram offline por mais de 1 hora
 setInterval(() => {
+  const limite = Date.now() - 60 * 60 * 1000; // 1 hora
   let removidos = 0;
   clientes.forEach((c, token) => {
-    if (c.ws.readyState !== WebSocket.OPEN) {
+    const offline = !c.ws || c.ws.readyState !== WebSocket.OPEN;
+    if (offline && c.ultimaVez < limite) {
       clientes.delete(token);
       removidos++;
     }
   });
   if (removidos > 0) {
+    console.log(`[LIMPEZA] ${removidos} clientes removidos`);
     broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
   }
-}, 30000);
+}, 5 * 60 * 1000); // checa a cada 5 minutos
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`✅ Servidor rodando na porta ${PORT}`));
