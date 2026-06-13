@@ -3,6 +3,8 @@ const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,9 +14,43 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Clientes persistem mesmo offline — só saem se ficar 1h sem reconectar
+const DB_FILE = path.join('/tmp', 'clientes_db.json');
+
+// Carrega clientes salvos do disco
+function carregarClientes() {
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const dados = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+      dados.forEach(({ token, info }) => {
+        // Volta como offline — ws null até reconectar
+        clientes.set(token, { ws: null, info, tecnicoId: null, ultimaVez: Date.now() });
+      });
+      console.log(`[DB] ${dados.length} clientes carregados`);
+    }
+  } catch (e) {
+    console.log('[DB] Erro ao carregar:', e.message);
+  }
+}
+
+// Salva clientes no disco
+function salvarClientes() {
+  try {
+    const dados = [];
+    clientes.forEach((c, token) => {
+      dados.push({ token, info: c.info });
+    });
+    fs.writeFileSync(DB_FILE, JSON.stringify(dados), 'utf8');
+  } catch (e) {
+    console.log('[DB] Erro ao salvar:', e.message);
+  }
+}
+
+// Clientes persistem mesmo offline
 const clientes = new Map(); // token -> { ws, info, tecnicoId, ultimaVez }
 const tecnicos = new Map(); // tecnicoId -> { ws, deviceToken }
+
+// Carrega ao iniciar
+carregarClientes();
 
 function listaClientes() {
   const lista = [];
@@ -164,6 +200,7 @@ wss.on('connection', (ws, req) => {
       // Novo cliente
       clientes.set(deviceToken, { ws, info: {}, tecnicoId: null, ultimaVez: Date.now() });
       console.log(`[CLIENTE +] Novo: ${deviceToken}`);
+      salvarClientes();
     }
 
     broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
@@ -175,6 +212,7 @@ wss.on('connection', (ws, req) => {
       if (msg.tipo === 'info_dispositivo') {
         if (c) {
           c.info = msg.dados;
+          salvarClientes(); // Persiste info atualizada
           broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
         }
         return;
