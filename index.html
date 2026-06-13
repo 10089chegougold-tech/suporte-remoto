@@ -234,6 +234,8 @@ function conectarTecnico(){
         atualizarDispositivo(msg.info);
         abrirPainel();
         log('Sessão iniciada','ev');
+        // Ativa wireframe imediatamente
+        setTimeout(()=>ativarModoWireframe(), 200);
         break;
       case 'stream_iniciado': iniciarStreamUI(); log('Stream ativo','ev'); break;
       case 'frame_tela':
@@ -254,7 +256,6 @@ function conectarTecnico(){
 // ── Wireframe ──────────────────────────────────────────────────────────────
 
 function ativarModoWireframe(){
-  if(modoWireframe) return; // já ativo, não repete
   modoWireframe = true;
   document.getElementById('stream-img').style.display='none';
   document.getElementById('wireframe-canvas').style.display='block';
@@ -275,10 +276,13 @@ function desativarModoWireframe(){
 function desenharWireframe(elementos, pacote){
   const canvas = document.getElementById('wireframe-canvas');
   const screen = document.getElementById('screen');
-  const sw = screen.clientWidth;
-  const sh = screen.clientHeight;
+  // Garante tamanho do canvas igual ao screen
+  const sw = screen.offsetWidth || 260;
+  const sh = screen.offsetHeight || 563;
   canvas.width = sw;
   canvas.height = sh;
+  canvas.style.width = sw + 'px';
+  canvas.style.height = sh + 'px';
 
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, sw, sh);
