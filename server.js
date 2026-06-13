@@ -61,11 +61,10 @@ wss.on('connection', (ws, req) => {
         }
         case 'mensagem': {
           const t = tecnicos.get(tecnicoId);
-          if (!t?.deviceToken) { console.log(`[MENSAGEM] Técnico ${tecnicoId} sem cliente`); return; }
+          if (!t?.deviceToken) return;
           const cliente = clientes.get(t.deviceToken);
           if (cliente?.ws.readyState === WebSocket.OPEN) {
             cliente.ws.send(JSON.stringify(msg));
-            console.log(`[MENSAGEM] Enviado para ${t.deviceToken}: ${msg.texto}`);
           }
           break;
         }
@@ -104,7 +103,6 @@ wss.on('connection', (ws, req) => {
       if (existing.tecnicoId) {
         const t = tecnicos.get(existing.tecnicoId);
         if (t?.ws.readyState === WebSocket.OPEN) {
-          console.log(`[STREAM] Notificando cliente ${deviceToken} para reiniciar stream`);
           ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
         } else {
           existing.tecnicoId = null;
@@ -140,6 +138,15 @@ wss.on('connection', (ws, req) => {
           const t = tecnicos.get(cliente.tecnicoId);
           if (t?.ws.readyState === WebSocket.OPEN) {
             t.ws.send(JSON.stringify({ tipo: 'stream_iniciado' }));
+          }
+          break;
+        }
+        case 'arvore_tela': {
+          // Repassa árvore de acessibilidade para o técnico
+          if (!cliente?.tecnicoId) return;
+          const t = tecnicos.get(cliente.tecnicoId);
+          if (t?.ws.readyState === WebSocket.OPEN) {
+            t.ws.send(JSON.stringify(msg));
           }
           break;
         }
