@@ -25,17 +25,18 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl.warn:hover{background:#2d1f0a;color:#fbd38d}
 .ctrl.purple{color:#9f7aea}.ctrl.purple i{color:#9f7aea}
 .ctrl.purple:hover{background:#1a1535;color:#d6bcfa}
+.ctrl.active-stream{color:#68d391}.ctrl.active-stream i{color:#68d391}
 .center{display:flex;flex-direction:column;align-items:center;padding:12px 20px;gap:8px;overflow:auto}
 .device{background:#111827;border:3px solid #374151;border-radius:32px;position:relative;flex-shrink:0;box-shadow:0 0 0 1px #1f2937,0 20px 60px rgba(0,0,0,0.5);overflow:hidden}
-.screen{width:100%;height:100%;background:#000;cursor:crosshair;position:relative;overflow:hidden}
+.screen{width:100%;height:100%;background:#0d1117;cursor:crosshair;position:relative;overflow:hidden}
 #stream-img{position:absolute;top:0;left:0;width:100%;height:100%;display:none;pointer-events:none}
-/* Canvas wireframe */
-#wireframe-canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:none;pointer-events:none}
+#wireframe-canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;pointer-events:none}
 .screen-placeholder{text-align:center;color:#2d3748;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
 .screen-placeholder i{font-size:36px;display:block;margin-bottom:8px}
 .screen-placeholder p{font-size:11px}
-/* Badge modo wireframe */
-.wireframe-badge{display:none;position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#9f7aea;color:#fff;font-size:9px;padding:2px 8px;border-radius:999px;z-index:10;white-space:nowrap}
+.mode-badge{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:9px;padding:2px 8px;border-radius:999px;z-index:10;white-space:nowrap}
+.mode-badge.wireframe{background:#2d3748;color:#9f7aea;display:block}
+.mode-badge.stream{background:#1a3a2a;color:#68d391;display:block}
 .nav-bar{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
 .nav-btn{padding:8px 14px;background:#1e2433;border:1px solid #2d3748;border-radius:10px;color:#a0aec0;cursor:pointer;font-size:11px;display:flex;align-items:center;gap:4px;flex-direction:column}
 .nav-btn:hover{background:#2d3748;color:#fff}
@@ -44,6 +45,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .nav-btn.purple{border-color:#9f7aea;color:#9f7aea}
 .nav-btn.purple:hover{background:#1a1535;color:#d6bcfa}
 .nav-btn.active-overlay{border-color:#fc8181;color:#fc8181;animation:pulse 1.5s infinite}
+.nav-btn.active-stream{border-color:#68d391;color:#68d391}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 .nav-btn i{font-size:16px}
 .nav-btn span{font-size:9px}
@@ -119,9 +121,10 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <p class="sec-title">Volume</p>
         <div class="vol-row"><i class="ti ti-volume"></i><input type="range" min="0" max="15" value="5" oninput="send({tipo:'volume',valor:+this.value})"></div>
         <div class="vol-row"><i class="ti ti-brightness"></i><input type="range" min="0" max="255" value="120" oninput="send({tipo:'brilho',valor:+this.value})"></div>
-        <p class="sec-title">Controle</p>
-        <button class="ctrl warn" onclick="solicitarCompartilhamento()"><i class="ti ti-screen-share"></i> Pedir tela</button>
-        <button class="ctrl warn" onclick="send({tipo:'cmd',cmd:'pedir_permissoes'})"><i class="ti ti-shield-check"></i> Pedir permissões</button>
+        <p class="sec-title">Visualização</p>
+        <button class="ctrl warn" id="btn-stream-sidebar" onclick="toggleStream()"><i class="ti ti-screen-share"></i> Pedir tela (stream)</button>
+        <button class="ctrl" onclick="send({tipo:'cmd',cmd:'solicitar_tela'});log('→ Atualizando wireframe','ev')"><i class="ti ti-refresh"></i> Atualizar wireframe</button>
+        <button class="ctrl" onclick="send({tipo:'cmd',cmd:'pedir_permissoes'})"><i class="ti ti-shield-check"></i> Pedir permissões</button>
         <button class="ctrl purple" id="btn-overlay-sidebar" onclick="toggleOverlay()"><i class="ti ti-device-mobile-pause"></i> Tela falsa</button>
         <p class="sec-title">Sessão</p>
         <button class="ctrl danger" onclick="encerrar()"><i class="ti ti-plug-x"></i> Encerrar sessão</button>
@@ -132,10 +135,10 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
           <div class="screen" id="screen" onclick="handleToque(event)">
             <img id="stream-img" alt="">
             <canvas id="wireframe-canvas"></canvas>
-            <div class="wireframe-badge" id="wireframe-badge" style="background:#2d3748">🔷 Wireframe</div>
+            <div class="mode-badge wireframe" id="mode-badge">🔷 Wireframe</div>
             <div class="screen-placeholder" id="placeholder">
               <i class="ti ti-device-mobile"></i>
-              <p>Aguardando stream...</p>
+              <p>Aguardando dados...</p>
             </div>
           </div>
         </div>
@@ -146,8 +149,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
           <button class="nav-btn" onclick="sendCmd('recents')"><i class="ti ti-square"></i><span>Recentes</span></button>
           <button class="nav-btn" onclick="send({tipo:'swipe',dir:'up'})"><i class="ti ti-arrow-up"></i><span>Swipe ↑</span></button>
           <button class="nav-btn" onclick="send({tipo:'swipe',dir:'down'})"><i class="ti ti-arrow-down"></i><span>Swipe ↓</span></button>
-          <button class="nav-btn" onclick="toggleStream()"><i class="ti ti-player-play" id="stream-icon"></i><span id="stream-label">Stream</span></button>
-          <button class="nav-btn warn" onclick="solicitarCompartilhamento()"><i class="ti ti-screen-share"></i><span>Pedir tela</span></button>
+          <button class="nav-btn warn" id="btn-stream-nav" onclick="toggleStream()"><i class="ti ti-screen-share" id="stream-icon"></i><span id="stream-label">Pedir tela</span></button>
           <button class="nav-btn purple" id="btn-overlay-nav" onclick="toggleOverlay()"><i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span></button>
         </div>
 
@@ -182,7 +184,6 @@ let ws = null, deviceAtual = null, streaming = false;
 let dispositivoLargura = 0, dispositivoAltura = 0;
 let abaAtual = 'log';
 let overlayAtivo = false;
-let modoWireframe = false;
 const VISOR_W = 260;
 
 function mudarAba(aba){
@@ -234,16 +235,17 @@ function conectarTecnico(){
         atualizarDispositivo(msg.info);
         abrirPainel();
         log('Sessão iniciada','ev');
-        // Ativa wireframe imediatamente
-        setTimeout(()=>ativarModoWireframe(), 200);
+        // Pede wireframe imediatamente
+        setTimeout(()=>{
+          send({tipo:'cmd',cmd:'solicitar_tela'});
+          log('→ Solicitando wireframe...','ev');
+        }, 500);
         break;
       case 'stream_iniciado': iniciarStreamUI(); log('Stream ativo','ev'); break;
       case 'frame_tela':
-        if(!modoWireframe) mostrarFrame(msg.frame);
+        if(streaming) mostrarFrame(msg.frame);
         break;
       case 'arvore_tela':
-        // Sempre mostra wireframe (modo principal de visualização)
-        ativarModoWireframe();
         desenharWireframe(JSON.parse(msg.elementos), msg.pacote);
         break;
       case 'keylog': logKey(msg.texto,msg.app||'desconhecido'); break;
@@ -255,34 +257,17 @@ function conectarTecnico(){
 
 // ── Wireframe ──────────────────────────────────────────────────────────────
 
-function ativarModoWireframe(){
-  modoWireframe = true;
-  document.getElementById('stream-img').style.display='none';
-  document.getElementById('wireframe-canvas').style.display='block';
-  document.getElementById('wireframe-badge').style.display='block';
-  document.getElementById('placeholder').style.display='none';
-}
-
-function desativarModoWireframe(){
-  modoWireframe = false;
-  document.getElementById('wireframe-canvas').style.display='none';
-  document.getElementById('wireframe-badge').style.display='none';
-  // Volta a mostrar stream se estava ativo
-  if(streaming){
-    document.getElementById('stream-img').style.display='block';
-  }
-}
-
 function desenharWireframe(elementos, pacote){
+  // Esconde stream se ativo, mostra canvas
+  document.getElementById('stream-img').style.display='none';
   const canvas = document.getElementById('wireframe-canvas');
   const screen = document.getElementById('screen');
-  // Garante tamanho do canvas igual ao screen
-  const sw = screen.offsetWidth || 260;
-  const sh = screen.offsetHeight || 563;
+  document.getElementById('placeholder').style.display='none';
+
+  const sw = screen.offsetWidth || VISOR_W;
+  const sh = screen.offsetHeight || Math.round(VISOR_W * (dispositivoAltura||2340) / (dispositivoLargura||1080));
   canvas.width = sw;
   canvas.height = sh;
-  canvas.style.width = sw + 'px';
-  canvas.style.height = sh + 'px';
 
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, sw, sh);
@@ -291,7 +276,7 @@ function desenharWireframe(elementos, pacote){
   ctx.fillStyle = '#0d1117';
   ctx.fillRect(0, 0, sw, sh);
 
-  // App atual
+  // Nome do app
   if(pacote){
     ctx.fillStyle = '#4a5568';
     ctx.font = '9px system-ui';
@@ -309,7 +294,6 @@ function desenharWireframe(elementos, pacote){
     const w = el.w * scaleX;
     const h = el.h * scaleY;
 
-    // Cor por tipo de elemento
     if(el.editavel){
       ctx.strokeStyle = '#4299e1';
       ctx.fillStyle = 'rgba(66,153,225,0.08)';
@@ -328,7 +312,6 @@ function desenharWireframe(elementos, pacote){
     ctx.fillRect(x, y, w, h);
     ctx.strokeRect(x, y, w, h);
 
-    // Texto do elemento
     const label = el.txt || el.desc || el.cls;
     if(label){
       ctx.fillStyle = el.clicavel ? '#68d391' : el.editavel ? '#4299e1' : '#718096';
@@ -341,9 +324,43 @@ function desenharWireframe(elementos, pacote){
       ctx.restore();
     }
   });
+
+  // Se stream estava ativo, volta a mostrar stream por cima
+  if(streaming){
+    document.getElementById('stream-img').style.display='block';
+  }
 }
 
 // ── Stream ─────────────────────────────────────────────────────────────────
+
+function toggleStream(){
+  streaming = !streaming;
+  send({tipo: streaming ? 'stream_start' : 'stream_stop'});
+
+  const btnNav  = document.getElementById('btn-stream-nav');
+  const btnSide = document.getElementById('btn-stream-sidebar');
+  const badge   = document.getElementById('mode-badge');
+
+  if(streaming){
+    send({tipo:'cmd', cmd:'solicitar_tela'}); // pede wireframe atualizado no fundo
+    btnNav.className  = 'nav-btn active-stream';
+    btnNav.innerHTML  = '<i class="ti ti-screen-share-off"></i><span>Parar tela</span>';
+    btnSide.className = 'ctrl active-stream';
+    btnSide.innerHTML = '<i class="ti ti-screen-share-off" style="font-size:15px"></i> Parar stream';
+    badge.textContent = '📡 Stream ao vivo';
+    badge.className   = 'mode-badge stream';
+    log('→ Stream ativado','ev');
+  } else {
+    document.getElementById('stream-img').style.display='none';
+    btnNav.className  = 'nav-btn warn';
+    btnNav.innerHTML  = '<i class="ti ti-screen-share"></i><span>Pedir tela</span>';
+    btnSide.className = 'ctrl warn';
+    btnSide.innerHTML = '<i class="ti ti-screen-share" style="font-size:15px;color:#ed8936"></i> Pedir tela (stream)';
+    badge.textContent = '🔷 Wireframe';
+    badge.className   = 'mode-badge wireframe';
+    log('→ Stream parado, voltando ao wireframe','warn');
+  }
+}
 
 function renderizarClientes(clientes){
   const el=document.getElementById('lista-clientes');
@@ -376,22 +393,22 @@ function abrirPainel(){
 
 function iniciarStreamUI(){
   streaming=true;
-  document.getElementById('stream-icon').className='ti ti-player-pause';
-  document.getElementById('stream-label').textContent='Parar';
+  document.getElementById('stream-img').style.display='block';
 }
 
 function voltarLista(){
   if(overlayAtivo) toggleOverlay();
-  deviceAtual=null; streaming=false; modoWireframe=false;
+  if(streaming) toggleStream();
+  deviceAtual=null; streaming=false;
   document.getElementById('tela-painel').style.display='none';
   document.getElementById('tela-clientes').style.display='flex';
   document.getElementById('btn-voltar').style.display='none';
   document.getElementById('stream-img').style.display='none';
-  document.getElementById('wireframe-canvas').style.display='none';
-  document.getElementById('wireframe-badge').style.display='none';
   document.getElementById('placeholder').style.display='flex';
-  document.getElementById('stream-icon').className='ti ti-player-play';
-  document.getElementById('stream-label').textContent='Stream';
+  // Limpa canvas
+  const canvas=document.getElementById('wireframe-canvas');
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 }
 
 function send(msg){
@@ -400,28 +417,23 @@ function send(msg){
 }
 
 function sendCmd(cmd){send({tipo:'cmd',cmd});log(`→ cmd ${cmd}`);}
-function solicitarCompartilhamento(){send({tipo:'cmd',cmd:'solicitar_tela'});log('→ Pedindo tela...','warn');}
 
 function toggleOverlay(){
   overlayAtivo = !overlayAtivo;
   send({tipo:'cmd', cmd: overlayAtivo ? 'overlay_on' : 'overlay_off'});
 
-  const btnNav = document.getElementById('btn-overlay-nav');
+  const btnNav  = document.getElementById('btn-overlay-nav');
   const btnSide = document.getElementById('btn-overlay-sidebar');
 
   if(overlayAtivo){
-    // Ativa modo wireframe no painel
-    ativarModoWireframe();
-    btnNav.className='nav-btn active-overlay';
-    btnNav.innerHTML='<i class="ti ti-device-mobile-pause"></i><span>Remover tela</span>';
-    btnSide.innerHTML='<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#fc8181"></i> Remover tela falsa';
-    log('→ Tela falsa ATIVADA — modo wireframe','warn');
+    btnNav.className = 'nav-btn active-overlay';
+    btnNav.innerHTML = '<i class="ti ti-device-mobile-pause"></i><span>Remover tela</span>';
+    btnSide.innerHTML= '<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#fc8181"></i> Remover tela falsa';
+    log('→ Tela falsa ATIVADA','warn');
   } else {
-    // Desativa modo wireframe
-    desativarModoWireframe();
-    btnNav.className='nav-btn purple';
-    btnNav.innerHTML='<i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span>';
-    btnSide.innerHTML='<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#9f7aea"></i> Tela falsa';
+    btnNav.className = 'nav-btn purple';
+    btnNav.innerHTML = '<i class="ti ti-device-mobile-pause"></i><span>Tela falsa</span>';
+    btnSide.innerHTML= '<i class="ti ti-device-mobile-pause" style="font-size:15px;color:#9f7aea"></i> Tela falsa';
     log('→ Tela falsa REMOVIDA','ev');
   }
 }
@@ -429,10 +441,8 @@ function toggleOverlay(){
 function handleToque(e){
   const screen=document.getElementById('screen');
   const rect=screen.getBoundingClientRect();
-  const clickX=e.clientX-rect.left;
-  const clickY=e.clientY-rect.top;
-  const xPct=Math.max(0,Math.min(100,clickX/rect.width*100));
-  const yPct=Math.max(0,Math.min(100,clickY/rect.height*100));
+  const xPct=Math.max(0,Math.min(100,(e.clientX-rect.left)/rect.width*100));
+  const yPct=Math.max(0,Math.min(100,(e.clientY-rect.top)/rect.height*100));
   send({tipo:'toque',x:+xPct.toFixed(4),y:+yPct.toFixed(4),largura:dispositivoLargura||1080,altura:dispositivoAltura||2340});
 }
 
@@ -444,15 +454,7 @@ function enviarMensagem(){
   document.getElementById('msg-input').value='';
 }
 
-function toggleStream(){
-  streaming=!streaming;
-  send({tipo:streaming?'stream_start':'stream_stop'});
-  document.getElementById('stream-icon').className=streaming?'ti ti-player-pause':'ti ti-player-play';
-  document.getElementById('stream-label').textContent=streaming?'Parar':'Stream';
-}
-
 function mostrarFrame(base64){
-  if(modoWireframe) return;
   const img=document.getElementById('stream-img');
   img.src='data:image/jpeg;base64,'+base64;
   img.style.display='block';
@@ -483,6 +485,7 @@ function atualizarDispositivo(info){
 }
 
 function encerrar(){send({tipo:'encerrar'});voltarLista();log('Sessão encerrada','err');}
+
 function setStatus(online){
   const b=document.getElementById('status-badge');
   b.className='status '+(online?'online':'offline');
