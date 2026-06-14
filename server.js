@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const DB_FILE = path.join('/tmp', 'clientes_db.json');
-const MAX_KEYS = 50;
+const MAX_KEYS = 100;
 
 function carregarClientes() {
   try {
